@@ -1,0 +1,39 @@
+schema = 1
+title = "Algorithmic experiment: comparison complexity"
+seed = 55
+replicates = 24
+paired = true
+
+[parameters]
+n = 160
+
+[arms.insertion]
+algorithm = "insertion"
+
+[arms.merge]
+algorithm = "merge"
+
+[[steps]]
+id = "bench"
+uses = "python:algorithms.py:benchmark"
+with = { n = "${parameters.n}", algorithm = "${arm.algorithm}" }
+out = { comparisons = "integer", correct = "boolean" }
+
+[[metrics]]
+id = "comparisons"
+source = "${steps.bench.comparisons}"
+unit = "comparisons"
+
+[[claims]]
+id = "merge_uses_fewer_comparisons"
+metric = "comparisons"
+control = "insertion"
+treatment = "merge"
+direction = "decrease"
+threshold = 2000
+
+[[guards]]
+id = "algorithm_sorted_correctly"
+source = "${steps.bench.correct}"
+op = "=="
+value = true

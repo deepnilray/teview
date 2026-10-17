@@ -1,0 +1,34 @@
+schema = 1
+title = "Robust statistics with source data snapshot"
+description = "Demonstrates an outlier-sensitive mean against a median on the same bootstrap sample."
+seed = 1928
+replicates = 40
+paired = true
+
+[datasets]
+study = "study.csv"
+
+[arms.mean]
+method = "mean"
+
+[arms.median]
+method = "median"
+
+[[steps]]
+id = "estimate"
+uses = "python:data.py:resample"
+with = { path = "${datasets.study}", method = "${arm.method}" }
+out = { estimate = "number", n = "integer" }
+
+[[metrics]]
+id = "estimate"
+source = "${steps.estimate.estimate}"
+unit = "observed-units"
+
+[[claims]]
+id = "median_reduces_outlier_influence"
+metric = "estimate"
+control = "mean"
+treatment = "median"
+direction = "decrease"
+threshold = 0.0

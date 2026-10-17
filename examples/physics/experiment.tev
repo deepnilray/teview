@@ -1,0 +1,42 @@
+schema = 1
+title = "Mechanics: reusable analytical free-fall apparatus"
+description = "Same model, distinct gravitational acceleration arms; analytic, no collisions."
+seed = 8
+replicates = 4
+paired = true
+
+[parameters]
+initial_height = 100.0
+initial_velocity = 0.0
+mass = 1.0
+duration = 2.0
+
+[arms.earth]
+acceleration = 9.81
+
+[arms.moon]
+acceleration = 1.62
+
+[[steps]]
+id = "trajectory"
+uses = "python:physics.py:projectile"
+with = { acceleration = "${arm.acceleration}", mass = "${parameters.mass}", duration = "${parameters.duration}", initial_height = "${parameters.initial_height}", initial_velocity = "${parameters.initial_velocity}" }
+out = { height = "number", speed = "number", energy = "number" }
+
+[[metrics]]
+id = "height"
+source = "${steps.trajectory.height}"
+unit = "m"
+
+[[metrics]]
+id = "energy"
+source = "${steps.trajectory.energy}"
+unit = "J"
+
+[[claims]]
+id = "lower_gravity_higher_height"
+metric = "height"
+control = "earth"
+treatment = "moon"
+direction = "increase"
+threshold = 10.0

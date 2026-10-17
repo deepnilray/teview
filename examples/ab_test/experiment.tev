@@ -1,0 +1,53 @@
+schema = 1
+title = "Synthetic A/B study: checkout conversion"
+description = "Demonstration only. These are simulated Bernoulli trials, not people."
+seed = 20261017
+replicates = 32
+paired = true
+
+[parameters]
+sessions = 1600
+
+[arms.control]
+probability = 0.20
+
+[arms.variant]
+probability = 0.30
+
+[[steps]]
+id = "sample"
+uses = "builtin:bernoulli"
+with = { n = "${parameters.sessions}", p = "${arm.probability}" }
+out = { successes = "integer", total = "integer", rate = "number" }
+
+[[steps]]
+id = "normalize"
+uses = "builtin:ratio"
+with = { numerator = "${steps.sample.successes}", denominator = "${steps.sample.total}" }
+out = { value = "number" }
+
+[[metrics]]
+id = "conversion"
+source = "${steps.normalize.value}"
+unit = "proportion"
+
+[[claims]]
+id = "variant_improves_conversion"
+metric = "conversion"
+control = "control"
+treatment = "variant"
+direction = "increase"
+threshold = 0.05
+confidence = 0.95
+
+[[guards]]
+id = "probability_lower_bound"
+source = "${steps.sample.rate}"
+op = ">="
+value = 0.0
+
+[[guards]]
+id = "probability_upper_bound"
+source = "${steps.sample.rate}"
+op = "<="
+value = 1.0

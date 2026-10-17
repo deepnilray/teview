@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "teview-evidence-core"
+version = "0.2.0a0"
+description = "Executable evidence-aware experiment protocols"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+readme = "README.md"
+authors = [{name = "TEVIEW Contributors"}]
+dependencies = []
+
+[project.scripts]
+tev = "tev:main"
+
+[tool.setuptools]
+py-modules = ["tev"]
