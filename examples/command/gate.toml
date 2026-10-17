@@ -1,0 +1,16 @@
+schema = 1
+title = "Numerical integration quality budget"
+
+[[checks]]
+id = "integration_error"
+arm = "default"
+metric = "error"
+direction = "decrease"
+max_absolute_regression = 0.0001
+
+[[checks]]
+id = "sample_count"
+arm = "default"
+metric = "samples"
+direction = "increase"
+max_absolute_regression = 0

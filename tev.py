@@ -10,7 +10,7 @@ import copy
 import csv
 from datetime import datetime, timezone
 import hashlib
-import importlib.util
+import types
 import json
 import math
 import os
@@ -25,7 +25,7 @@ import tempfile
 import tomllib
 import traceback
 
-VERSION = '0.2.0-alpha'
+VERSION = '0.3.0-alpha'
 MAX_JSON_BYTES = 5 * 1024 * 1024
 IDENT = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*$')
 REF = re.compile(r'^\$\{(parameters|arm|run|datasets|steps)\.([A-Za-z_][A-Za-z0-9_]*)(?:\.([A-Za-z_][A-Za-z0-9_]*))?\}$')
@@ -254,10 +254,12 @@ def call_python(root, uses, args, seed):
     rel,fn=uses.split(':')[1:]
     path=relative_file(root,rel)
     module_name='_tev_'+filehash(path)[:16]
-    spec=importlib.util.spec_from_file_location(module_name,path)
-    require(spec is not None and spec.loader is not None,'cannot import Python plugin')
-    mod=importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
+    # Read and compile the declared source directly: Python's .pyc timestamp/size
+    # cache can otherwise execute OLD code after same-second, same-size edits.
+    # Plugins are still fully trusted Python and are NEVER a sandbox.
+    mod=types.ModuleType(module_name)
+    mod.__file__=str(path)
+    exec(compile(path.read_bytes(),str(path),'exec'),mod.__dict__)
     function=getattr(mod,fn,None)
     require(callable(function),f'plugin function {fn} not found in {rel}')
     return function(copy.deepcopy(args),seed=seed)
@@ -422,6 +424,7 @@ def run(path,out,allow_python=False,no_cache=False,cache=None):
             src=relative_file(root,rel);dest=snapshot/rel;dest.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(src,dest)
         report={'version':VERSION,'title':spec['title'],'protocol_sha256':filehash(path),
                 'inputs_sha256':dsh,'plugins_sha256':psh,
+                'metric_units':{m['id']:m.get('unit','') for m in spec['metrics']},
                 'environment':{'python':platform.python_version(),'implementation':platform.python_implementation(),
                                'platform':platform.platform()},
                 'design':{'replicates':spec.get('replicates',1),'paired':spec.get('paired',False),'seed':spec.get('seed',0),'arms':list(spec.get('arms',{'default':{}}))},
@@ -455,7 +458,11 @@ def run(path,out,allow_python=False,no_cache=False,cache=None):
         raise
 
 def verify(folder,allow_python=False):
-    folder=Path(folder).resolve(); report=json.loads((folder/'report.json').read_text())
+    folder=Path(folder).resolve()
+    if (folder/'capture.json').is_file():
+        from teview_capture import verify_capture
+        return verify_capture(folder)
+    report=json.loads((folder/'report.json').read_text())
     spec_path=folder/'source'/'experiment.tev'
     require(spec_path.is_file(),'run has no source snapshot')
     require(filehash(spec_path)==report['protocol_sha256'],'protocol copy was modified')
@@ -472,6 +479,17 @@ def verify(folder,allow_python=False):
             'replay DIFFERED from recorded stage inputs/outputs')
     require(obs==report['observations'],'replay DIFFERED from recorded measurements')
     require(inference(spec,obs)==report['claims'],'replay DIFFERED from recorded claims')
+    require(report.get('design') == {'replicates':spec.get('replicates',1), 'paired':spec.get('paired',False),
+            'seed':spec.get('seed',0), 'arms':list(spec.get('arms',{'default':{}}))}, 'reported experimental design was modified')
+    claims = inference(spec,obs)
+    expected_verdict = ('unverified_no_claims' if not claims else
+        'evidence_against_claim' if any(c['status']=='contradicted_by_interval' for c in claims) else
+        'claims_supported_exploratory' if all(c['status']=='supported_by_interval' for c in claims) else 'inconclusive')
+    require(report.get('verdict') == expected_verdict, 'reported verdict was modified')
+    require(report.get('guard_count') == len(spec.get('guards', [])), 'reported guard count was modified')
+    if 'metric_units' in report:
+        require(report['metric_units'] == {m['id']:m.get('unit','') for m in spec['metrics']},
+                'reported metric units were modified')
     return {'verified_replay':True,'observation_count':len(obs),'protocol_sha256':report['protocol_sha256'],
             'interpretation':'computational replay only; not scientific validation'}
 
@@ -507,6 +525,25 @@ def main(argv=None):
     p.add_argument('--cache',help='optional shared stage cache directory');p.add_argument('--no-cache',action='store_true')
     p=sub.add_parser('verify');p.add_argument('run_folder');p.add_argument('--allow-python',action='store_true')
     p=sub.add_parser('compare');p.add_argument('left');p.add_argument('right')
+    p=sub.add_parser('capture', help='Capture an existing command with declared inputs and numeric metrics')
+    p.add_argument('--out',required=True);p.add_argument('--root',default='.')
+    p.add_argument('--code',action='append',default=[],help='source file to snapshot (repeatable)')
+    p.add_argument('--data',action='append',default=[],help='input dataset to snapshot (repeatable)')
+    p.add_argument('--metrics',default='metrics.json',help='JSON file the command must produce')
+    p.add_argument('--artifact',action='append',default=[],help='output artifact to hash (repeatable)')
+    p.add_argument('--timeout',type=int,default=60);p.add_argument('--seed',type=int,default=0)
+    p.add_argument('argv_command',nargs=argparse.REMAINDER)
+    p=sub.add_parser('init', help='Create an editable Python experiment starter')
+    p.add_argument('directory')
+    p=sub.add_parser('gate', help='Evaluate a candidate run against a versioned regression policy')
+    p.add_argument('baseline');p.add_argument('candidate');p.add_argument('--policy',required=True)
+    p.add_argument('--allow-protocol-change',action='store_true')
+    p.add_argument('--allow-input-change',action='store_true')
+    p.add_argument('--json-out',help='Write machine-readable gate results')
+    p.add_argument('--verify-evidence',action='store_true',
+                   help='Re-execute and verify both bundles before evaluating (executes capture commands)')
+    p.add_argument('--allow-python',action='store_true',
+                   help='Permit trusted Python plugins when --verify-evidence is enabled')
     args=parser.parse_args(argv)
     try:
         if args.command in ('validate','plan'):
@@ -517,6 +554,25 @@ def main(argv=None):
             print(json.dumps({'out':str(args.out),'verdict':result['verdict'],'claims':result['claims'],'cache':cache},indent=2))
         elif args.command=='verify':print(json.dumps(verify(args.run_folder,args.allow_python),indent=2))
         elif args.command=='compare':print(json.dumps(compare(args.left,args.right),indent=2))
+        elif args.command=='capture':
+            from teview_capture import capture
+            command_args = args.argv_command
+            if command_args and command_args[0]=='--':command_args=command_args[1:]
+            print(json.dumps(capture(args.root,args.out,code=args.code,data=args.data,
+                     command=command_args,metrics=args.metrics,artifacts=args.artifact,
+                     timeout=args.timeout,seed=args.seed),indent=2))
+        elif args.command=='init':
+            from teview_starter import create_starter
+            print(json.dumps(create_starter(args.directory),indent=2))
+        elif args.command=='gate':
+            from teview_gate import gate, GateError
+            if args.verify_evidence:
+                verify(args.baseline,args.allow_python)
+                verify(args.candidate,args.allow_python)
+            result=gate(args.baseline,args.candidate,args.policy,args.allow_protocol_change,args.allow_input_change)
+            if args.json_out:save_json(Path(args.json_out),result)
+            print(json.dumps(result,indent=2))
+            return 0 if result['status']=='pass' else 2
     except (ExperimentError,OSError,ValueError,KeyError,TypeError) as exc:
         print(f'TEVIEW ERROR: {exc}',file=sys.stderr);return 1
     return 0

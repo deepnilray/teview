@@ -37,3 +37,10 @@ jobs:
         run: tev run examples/physics/experiment.tev --out results/ci-physics --allow-python
       - name: Verify trusted example
         run: tev verify results/ci-physics --allow-python
+
+      - name: Capture existing command-line experiment
+        run: tev capture --root examples/command --out results/ci-capture --code integrate.py --data measurements.csv -- python integrate.py
+      - name: Replay captured command
+        run: tev verify results/ci-capture
+      - name: Gate captured evidence with verified replay
+        run: tev gate results/ci-capture results/ci-capture --policy examples/command/gate.toml --verify-evidence

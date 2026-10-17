@@ -26,3 +26,14 @@ TEVIEW executes local computational workflows. It does not provide isolation fro
 Do not use this alpha for untrusted shared execution, safety-critical systems or regulated research decisions.
 
 For a suspected security problem, avoid posting exploit details in a public issue. Contact the repository maintainer privately through a channel listed on their GitHub profile until a formal security contact is established.
+
+## Captured commands (v0.3)
+
+`tev capture` explicitly executes the supplied command with the user's OS permissions.
+It is neither a container nor a sandbox. It inherits the process environment,
+including variables containing secrets. Run only code and commands you trust.
+Captured file lists are explicit, not discovered automatically: imports, network
+responses, private credentials and system dependencies are outside the evidence
+boundary. Avoid checking generated evidence bundles containing sensitive logs
+into public repositories. `tev gate --verify-evidence` executes the commands in
+both evidence bundles and must only be used with reviewed inputs.

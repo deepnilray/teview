@@ -1,105 +1,93 @@
 # TEVIEW
 
-**Text-defined computational experiments with reproducible execution records.**
+**Run an experiment. Preserve the evidence. Reject regressions.**
 
-TEVIEW is a command-line tool for describing experiments in a versioned, machine-readable file. An experiment declares inputs, alternative conditions, execution steps, measurements, constraints and comparison criteria. The runner produces a record of the procedure, results, code and declared input files so another developer can rerun the computation.
+TEVIEW is an open-source, Python 3.11+ command-line tool for computational experiments. It records source and declared data, runs candidate approaches, checks measurable acceptance criteria, and produces replayable evidence bundles. You can start with an existing script or define a full experimental protocol.
 
-TEVIEW is an early-stage research prototype. It is not a physics engine, laboratory hardware controller, statistical certification tool or replacement for mature workflow systems.
+TEVIEW runs locally, needs no server account, and its core has no third-party runtime dependencies. It is an **alpha**: it does not establish scientific validity, automatically reproduce untracked dependencies, or safely execute untrusted code.
 
-## Quick start
+## Start with code you already have
 
-Requires Python 3.11 or newer. The core and included examples use only the standard library.
-
-```bash
-python tev.py validate examples/ab_test/experiment.tev
-python tev.py plan examples/ab_test/experiment.tev
-python tev.py run examples/ab_test/experiment.tev --out results/ab
-python tev.py verify results/ab
-```
-
-For an installable command:
+From a clone of this repository:
 
 ```bash
 python -m pip install -e .
-tev --help
+tev capture --root examples/command --out runs/integration-v1 \
+  --code integrate.py --data measurements.csv \
+  -- python integrate.py
+tev verify runs/integration-v1
 ```
 
-Some examples call user-provided Python functions. These require the explicit `--allow-python` option:
+The example integrates a sampled function and writes `metrics.json`. `capture` executes `python integrate.py` in a separate temporary directory containing only the explicitly declared files, saves numerical measurements and source snapshots, and produces a report. `verify` re-executes the saved command and checks that measurements and declared artifact hashes match. The command runs **with your user permissions**, not inside a security sandbox.
+
+To capture your own existing program:
 
 ```bash
-python tev.py run examples/physics/experiment.tev --out results/physics --allow-python
-python tev.py verify results/physics --allow-python
+tev capture --root my-project --out runs/baseline \
+  --code analyze.py --data observations.csv \
+  --metrics metrics.json -- python analyze.py
 ```
 
-Only enable this option for code you trust. Python extensions are not isolated or sandboxed.
+Your script needs to write a JSON object containing finite numeric values, such as `{"error": 0.012, "runtime_ms": 43.2}`. Declare **all** source code and data files required for replay with repeated `--code` and `--data` options; undeclared imports, packages, OS dependencies, API responses and external services are **not** captured automatically. You can track output files using `--artifact results.csv`. See [capture specification](docs/capture.md).
 
-## Experiment format
+## Decide whether a change is acceptable
 
-An experiment is a TOML document saved with the `.tev` extension. This is a small, inspectable configuration format, not a proprietary programming language.
+Create a second run after changing the implementation (without changing the experiment or dataset):
 
-```toml
-schema = 1
-title = "Checkout conversion comparison"
-seed = 20261017
-replicates = 32
-paired = true
-
-[parameters]
-sessions = 1600
-
-[arms.control]
-probability = 0.20
-
-[arms.variant]
-probability = 0.30
-
-[[steps]]
-id = "sample"
-uses = "builtin:bernoulli"
-with = { n = "${parameters.sessions}", p = "${arm.probability}" }
-out = { successes = "integer", total = "integer", rate = "number" }
-
-[[metrics]]
-id = "conversion"
-source = "${steps.sample.rate}"
-unit = "proportion"
-
-[[claims]]
-id = "conversion_increase"
-metric = "conversion"
-control = "control"
-treatment = "variant"
-direction = "increase"
-threshold = 0.05
-confidence = 0.95
+```bash
+tev capture --root examples/command --out runs/integration-v2 \
+  --code integrate.py --data measurements.csv \
+  -- python integrate.py
+tev gate runs/integration-v1 runs/integration-v2 \
+  --policy examples/command/gate.toml --verify-evidence
 ```
 
-The example generates **synthetic** outcomes. It does not constitute evidence about real users. Claims produced by the experimental inference module are exploratory; the tool does not automatically establish causality or validity of a statistical design.
+The gate compares candidate metrics to a baseline and applies explicit regression budgets. The provided example policy requires numerical error not to regress by more than 0.0001 and the sample count not to decrease. A rejected candidate returns exit code **2**, so it can fail CI; invalid evidence or a command failure returns **1**. Both runs must have the same command specification, datasets, design and measurement units unless explicitly overridden for a reviewed change. The gate measures a **defined policy**, not statistical significance.
 
-## Commands
+You can inspect the machine-readable verdict or write it to a file:
 
-| Command | Purpose |
-| --- | --- |
-| `tev validate <file>` | Check structure, references and declared contracts |
-| `tev plan <file>` | Display execution order, steps and declared resources |
-| `tev run <file> --out <directory>` | Execute and save an evidence bundle |
-| `tev verify <directory>` | Re-execute the saved source without cache and compare results |
-| `tev compare <run-a> <run-b>` | Compare recorded metric means |
+```bash
+tev gate runs/integration-v1 runs/integration-v2 \
+  --policy examples/command/gate.toml --json-out gate-result.json
+```
 
-The runner supports dependency-ordered steps, typed outputs, seeded replications, guarded conditions, declared datasets, content-hash caching and opt-in Python extensions. Available built-in functions are `bernoulli`, `ratio`, `mean`, `linear` and `csv_column`.
+Without `--verify-evidence`, the gate reads the reports but does not re-execute them. For high-trust decisions, use `--verify-evidence` with reviewed code. Captured commands and Python plugins are not sandboxed.
 
-## Run artifacts
+## Design experiments with structured protocols
 
-Each run contains a copy of its protocol and declared inputs, `protocol.json`, `report.json`, `lineage.json`, `measurements.csv` and a readable `REPORT.md`. A successful `verify` means recorded computational results replayed under the available environment; it does **not** prove that the scientific method, model or data were correct.
+If you want multiple experimental arms, seeded replications, step dependencies, declared datasets and exploratory hypotheses, use a `.tev` protocol (TOML). You don't need to learn a proprietary language.
 
-## Examples
+```bash
+tev init my-study
+tev validate my-study/experiment.tev
+tev run my-study/experiment.tev --out runs/study --allow-python
+tev verify runs/study --allow-python
+```
 
-| Directory | Experiment |
-| --- | --- |
-| `examples/ab_test` | Synthetic paired A/B comparison |
-| `examples/physics` | Analytical free-fall calculation |
-| `examples/software` | Comparison-count study of sorting algorithms |
-| `examples/data` | CSV-based measurement analysis |
+`init` generates an editable sample project, including the protocol, Python function, and regression policy. Replace the sample computation with your actual research code. Use `--allow-python` **only for trusted scripts**.
+
+A non-Python synthetic A/B experiment runs without executing extension code:
+
+```bash
+tev plan examples/ab_test/experiment.tev
+tev run examples/ab_test/experiment.tev --out runs/ab
+tev verify runs/ab
+```
+
+The tool currently has built-in operators `bernoulli`, `ratio`, `mean`, `linear`, and `csv_column`. For your own logic, specify `python:relative_file.py:function` and opt into Python execution. Full syntax: [protocol specification](docs/protocol.md).
+
+## What a TEVIEW run contains
+
+- `report.json` and `REPORT.md`: measurements and accurately limited claim/guard assessments
+- Snapshots of explicitly declared source and data under `source/`
+- Captured commands: `capture.json`, `metrics.json`, `stdout.txt`, `stderr.txt`
+- Structured protocols: `protocol.json`, `measurements.csv`, `lineage.json`
+
+A passing `tev verify` means declared computations replayed in the **current environment**. It does not prove the model is correct, that all dependencies were captured, that the reported effect is causal, or that a different machine will reproduce it.
+
+## Where TEVIEW fits
+
+Experiment platforms such as MLflow and DVC already offer sophisticated metrics, pipelines and experiment tracking; ReproZip offers more extensive dependency capture. TEVIEW is smaller. Its focus is a text-first **measurable acceptance gate backed by replayable evidence**, usable with ordinary local command-line programs and without mandatory infrastructure. It is not a replacement for those mature systems or for specialized physics, statistics, hardware, or workflow engines.
 
 ## Development
 
@@ -107,6 +95,6 @@ Each run contains a copy of its protocol and declared inputs, `protocol.json`, `
 python -m unittest discover -s tests -v
 ```
 
-The CI workflow runs the test suite and an example execution/replay on supported Python versions. See [protocol reference](docs/protocol.md) and [security and limitations](SECURITY.md) for details.
+CI exercises Windows, macOS and Linux with Python 3.11 and 3.13, including command capture, replay and the gate. See [architecture](docs/architecture.md), [security policy](SECURITY.md) and [contributing](CONTRIBUTING.md). Licensed under MIT.
 
-**Status:** v0.2.0 alpha. The core is intended for trusted local experimentation; compatibility and model interfaces may change. Licensed under MIT.
+**Status: v0.3.0 alpha.** Backward compatibility is not yet guaranteed. External user adoption and independent scientific validation have not been established.
