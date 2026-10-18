@@ -44,3 +44,12 @@ jobs:
         run: tev verify results/ci-capture
       - name: Gate captured evidence with verified replay
         run: tev gate results/ci-capture results/ci-capture --policy examples/command/gate.toml --verify-evidence
+
+      - name: Validate composable physical scenes
+        run: |
+          tev scene-check examples/scenes/electrothermal.tev
+          tev scene-check examples/scenes/ball_water_spring.tev
+      - name: Simulate independently composed components
+        run: tev simulate examples/scenes/electrothermal.tev --out results/ci-lamp
+      - name: Verify physical scene replay
+        run: tev scene-verify results/ci-lamp
