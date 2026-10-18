@@ -25,7 +25,7 @@ import tempfile
 import tomllib
 import traceback
 
-VERSION = '0.3.0-alpha'
+VERSION = '0.5.0-alpha'
 MAX_JSON_BYTES = 5 * 1024 * 1024
 IDENT = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*$')
 REF = re.compile(r'^\$\{(parameters|arm|run|datasets|steps)\.([A-Za-z_][A-Za-z0-9_]*)(?:\.([A-Za-z_][A-Za-z0-9_]*))?\}$')
