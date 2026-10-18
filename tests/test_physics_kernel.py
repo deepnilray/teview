@@ -252,9 +252,20 @@ class CompilerAndReplayTests(unittest.TestCase):
         self.assertEqual(end['emitter.light_power'],0)
         self.assertEqual(end['receiver.absorbed_power'],0)
 
+    def test_combined_five_domain_assembly(self):
+        root=Path(__file__).resolve().parents[1]/'examples/scenes'
+        model=load_scene(root/'combined_lab.tev')
+        report,_=simulate(model)
+        laws={item['law'] for item in model.interactions}
+        for law in ('gravity','electric_force','buoyancy_and_drag','hooke',
+                    'ideal_dc_network','joule_heating_and_emission','radiative_absorption'):
+            self.assertIn(law,laws)
+        self.assertGreater(report['final']['payload.temperature'],293.15)
+        self.assertGreater(report['final']['payload.x'],0)
+
     def test_example_compositions_execute(self):
         root=Path(__file__).resolve().parents[1]/'examples/scenes'
-        for filename in ('electrothermal.tev','ball_water_spring.tev','opto_thermal.tev'):
+        for filename in ('electrothermal.tev','ball_water_spring.tev','opto_thermal.tev','combined_lab.tev'):
             with self.subTest(filename=filename):
                 report,rows=simulate(load_scene(root/filename))
                 self.assertEqual(report['status'],'simulated_not_validated')
