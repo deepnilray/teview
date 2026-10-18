@@ -1,0 +1,65 @@
+schema = 1
+title = "Mechanical, fluid, electric, light and heat interactions in one new assembly"
+
+[world]
+gravity = [0, "-9.81 m/s^2"]
+electric_field = ["25 V/m", 0]
+duration = "2 s"
+dt = "0.002 s"
+
+[[components]]
+id = "payload"
+kind = "sphere"
+position = [0, "0.25 m"]
+radius = "0.06 m"
+mass = "1.2 kg"
+charge = "0.02 C"
+absorptivity = 0.8
+heat_capacity = "0.3 J/K"
+
+[[components]]
+id = "support"
+kind = "anchor"
+position = [0, "1.1 m"]
+
+[[components]]
+id = "water"
+kind = "fluid"
+surface = "0.5 m"
+bottom = "-1 m"
+density = "1000 kg/m^3"
+drag = "3 N*s/m"
+
+[[components]]
+id = "suspension"
+kind = "spring"
+a = "support"
+b = "payload"
+stiffness = "24 N/m"
+rest_length = "0.65 m"
+damping = "1 N*s/m"
+
+[[components]]
+id = "floor"
+kind = "floor"
+height = "-0.95 m"
+
+[[components]]
+id = "battery"
+kind = "battery"
+voltage = "12 V"
+
+[[components]]
+id = "lamp"
+kind = "lamp"
+position = ["0.45 m", "0.25 m"]
+resistance = "24 ohm"
+light_fraction = 0.3
+
+[[connections]]
+a = "battery.positive"
+b = "lamp.a"
+
+[[connections]]
+a = "lamp.b"
+b = "battery.negative"
