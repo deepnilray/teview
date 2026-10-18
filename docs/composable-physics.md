@@ -39,7 +39,7 @@ bottom = "-1 m"
 density = "1000 kg/m^3"
 ```
 
-See the executable examples `electrothermal.tev` and `ball_water_spring.tev`. The first defines and connects electrical parts; the second freely combines spring tension, gravity, buoyancy, fluid drag and electrical force.
+See the executable examples `electrothermal.tev`, `ball_water_spring.tev`, `opto_thermal.tev`, and `combined_lab.tev`. The first defines and connects electrical parts; the second freely combines spring tension, gravity, buoyancy, fluid drag and electrical force.
 
 ## Current component kinds
 
