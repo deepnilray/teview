@@ -20,6 +20,8 @@ class PhysicsError(ValueError):
     """Invalid physical model or unsupported configuration."""
 
 
+COULOMB = 8.9875517923e9  # 1/(4*pi*epsilon_0) in N m^2/C^2
+
 # factor relative to SI, and semantic dimensional category
 UNITS = {
     'm': (1., 'length'), 'cm': (.01, 'length'), 'mm': (.001, 'length'),
@@ -88,6 +90,11 @@ FIELDS = {
         'cooling': ('conductance', 0, False),
     },
     'anchor': {'position': ('vec:length', None, True)},
+    'fixed_charge': {
+        'position': ('vec:length', None, True), 'charge': ('charge', None, True),
+        'radius': ('length', 0, False),
+    },
+    'field_probe': {'position': ('vec:length', None, True)},
     'fluid': {
         'surface': ('length', None, True), 'bottom': ('length', -1e6, False),
         'density': ('density', None, True), 'drag': ('damping', 0, False),
@@ -120,6 +127,9 @@ KINDS = frozenset(FIELDS)
 LAW_EQUATIONS = {
     'gravity': 'F = m*g',
     'electric_force': 'F = q*E',
+    'coulomb_pair': 'F_ab = -k*q_a*q_b*(r_b-r_a)/(epsilon_r*|r_b-r_a|^3)',
+    'fixed_charge_field': 'E = k*q*(r-r_source)/(epsilon_r*|r-r_source|^3)',
+    'electric_probe': 'E = E_uniform + sum(k*q_i*(r-r_i)/(epsilon_r*|r-r_i|^3))',
     'buoyancy_and_drag': 'F_buoyancy = -rho*V_submerged*g; F_drag = -c*(V_submerged/V_sphere)*v',
     'hooke': 'F_tension = k*(length-rest_length) + damping*d(length)/dt',
     'tension_only': 'F_tension = max(0, k*(length-rest_length)+damping*d(length)/dt) when stretched',
@@ -168,6 +178,7 @@ class Scene:
     duration: float
     dt: float
     steps: int
+    relative_permittivity: float
     connections: list
     interactions: list
     source_hash: str
@@ -180,12 +191,14 @@ def compile_scene(raw, content=b''):
     if raw.get('schema') != 1:
         raise PhysicsError('Scene requires schema = 1')
     world = raw.get('world', {})
-    if not isinstance(world, dict) or set(world) - {'gravity', 'electric_field', 'duration', 'dt', 'ambient_temperature'}:
+    if not isinstance(world, dict) or set(world) - {'gravity', 'electric_field', 'duration', 'dt', 'ambient_temperature', 'relative_permittivity'}:
         raise PhysicsError('world: unknown settings')
     gravity = vector(world.get('gravity', [0, -9.81]), 'acceleration', 'world.gravity')
     efield = vector(world.get('electric_field', [0, 0]), 'electric_field', 'world.electric_field')
     ambient = positive(si(world.get('ambient_temperature', 293.15),
                           'temperature', 'world.ambient_temperature'), 'ambient_temperature')
+    permittivity = positive(scalar(world.get('relative_permittivity', 1), 'world.relative_permittivity'),
+                            'world.relative_permittivity')
     duration = positive(si(world.get('duration', 1), 'time', 'world.duration'), 'duration')
     dt = positive(si(world.get('dt', .005), 'time', 'world.dt'), 'dt')
     steps = math.ceil(duration / dt)
@@ -239,6 +252,8 @@ def compile_scene(raw, content=b''):
                 raise PhysicsError(f'{name}: optical absorption needs explicit heat_capacity')
             if part['heat_capacity'] is not None:
                 positive(part['heat_capacity'], f'{name}.heat_capacity')
+        elif kind == 'fixed_charge':
+            positive(part['radius'], f'{name}.radius', allow_zero=True)
         elif kind == 'fluid':
             positive(part['density'], f'{name}.density')
             if part['surface'] <= part['bottom']:
@@ -296,6 +311,10 @@ def compile_scene(raw, content=b''):
             interactions.append({'law': 'gravity', 'objects': [b['id']]})
         if b['charge'] and efield != (0., 0.):
             interactions.append({'law': 'electric_force', 'objects': [b['id']]})
+        if b['charge']:
+            for source in components.values():
+                if source['kind'] == 'fixed_charge' and source['charge']:
+                    interactions.append({'law': 'fixed_charge_field', 'objects': [b['id'], source['id']]})
         for f in components.values():
             if f['kind'] == 'fluid':
                 interactions.append({'law': 'buoyancy_and_drag', 'objects': [b['id'], f['id']]})
@@ -320,10 +339,19 @@ def compile_scene(raw, content=b''):
     for i, a in enumerate(spheres):
         for b in spheres[i+1:]:
             interactions.append({'law': 'sphere_contact', 'objects': [a['id'], b['id']]})
+            if a['charge'] and b['charge']:
+                interactions.append({'law': 'coulomb_pair', 'objects': [a['id'], b['id']]})
+    for probe in (p for p in components.values() if p['kind'] == 'field_probe'):
+        charged = [p['id'] for p in components.values()
+                   if p['kind'] in ('sphere','fixed_charge') and p['charge']]
+        for emitter_id in charged:
+            interactions.append({'law': 'electric_probe', 'objects': [probe['id'], emitter_id]})
+        if efield != (0., 0.) or not charged:
+            interactions.append({'law': 'electric_probe', 'objects': [probe['id'], 'world.electric_field']})
     for interaction in interactions:
         interaction['equation'] = LAW_EQUATIONS[interaction['law']]
     return Scene(components, [p['id'] for p in spheres], gravity, efield, ambient, duration,
-                 dt, steps, connections, interactions,
+                 dt, steps, permittivity, connections, interactions,
                  hashlib.sha256(content if content else repr(raw).encode()).hexdigest(),
                  str(raw.get('title', 'Untitled scene')))
 
@@ -355,6 +383,37 @@ def displaced_volume(r, center_y, bottom, surface):
             _sphere_below(r, bottom-center_y+r))
 
 
+def _coulomb_field(scene, position, state, excluded=None, *, probe=False):
+    """External electric field in a homogeneous 3D Coulomb model sampled on the 2D scene.
+
+    Charged spheres are modeled as uniformly charged spherical shells *outside* their
+    surfaces. Evaluating a field inside a charged sphere or source is unsupported.
+    """
+    ex, ey = scene.electric_field
+    phi = -_dot(scene.electric_field, position)  # arbitrary zero at world origin
+    for component in scene.components.values():
+        if component['kind'] == 'fixed_charge':
+            charge, center, radius = component['charge'], component['position'], component['radius']
+        elif component['kind'] == 'sphere' and component['id'] != excluded:
+            charge, center, radius = component['charge'], state[component['id']][:2], component['radius']
+        else:
+            continue
+        if not charge:
+            continue
+        dx, dy = position[0] - center[0], position[1] - center[1]
+        dist = math.hypot(dx, dy)
+        if dist <= max(radius, 1e-12):
+            label = 'field probe' if probe else 'charged body'
+            raise PhysicsError(f'{label} is inside/on charged object {component["id"]}; interior field model unsupported')
+        kq = COULOMB * charge / scene.relative_permittivity
+        ex += kq * dx / (dist**3)
+        ey += kq * dy / (dist**3)
+        phi += kq / dist
+    if not all(math.isfinite(v) for v in (ex, ey, phi)):
+        raise PhysicsError('Electrostatic field overflow; inspect charge magnitude and separation')
+    return ex, ey, phi
+
+
 def _mechanical_force(scene, state):
     c = scene.components
     forces = {name: _mul(scene.gravity, c[name]['mass']) for name in scene.bodies}
@@ -362,7 +421,9 @@ def _mechanical_force(scene, state):
         p = c[name]
         x, y, vx, vy = state[name]
         f = forces[name]
-        f = _add(f, _mul(scene.electric_field, p['charge']))
+        if p['charge']:
+            ex, ey, _ = _coulomb_field(scene, (x, y), state, excluded=name)
+            f = _add(f, (ex*p['charge'], ey*p['charge']))
         f = _sub(f, _mul((vx, vy), p['drag']))
         for other in c.values():
             if other['kind'] != 'fluid':
@@ -606,6 +667,13 @@ def _snapshot(scene, state, temperature, electric, absorbed, time):
         result[f'{name}.temperature']=temp
     for name,power in absorbed.items():
         result[f'{name}.absorbed_power']=power
+    for component in scene.components.values():
+        if component['kind'] != 'field_probe':
+            continue
+        ex, ey, potential = _coulomb_field(scene, component['position'], state, probe=True)
+        result[f"{component['id']}.electric_field_x"] = ex
+        result[f"{component['id']}.electric_field_y"] = ey
+        result[f"{component['id']}.potential"] = potential
     return result
 
 
@@ -622,6 +690,15 @@ def simulate(scene, output=None):
         masses=[scene.components[x]['mass'] for x in (comp['a'],comp['b']) if x in scene.bodies]
         if masses and scene.dt>0.15*math.sqrt(min(masses)/comp['stiffness']):
             raise PhysicsError(f'{comp["id"]}: dt too large for spring/rope stiffness; decrease world.dt')
+    charged_count=sum(bool(scene.components[b]['charge']) for b in scene.bodies)
+    sources_count=sum(p['kind']=='fixed_charge' and bool(p['charge']) for p in scene.components.values())
+    probes_count=sum(p['kind']=='field_probe' for p in scene.components.values())
+    # Explicit work budget prevents unintentionally quadratic electrostatic runs.
+    estimated_pairs=max(0,charged_count-1)+sources_count
+    field_evaluations=4*scene.steps*charged_count*estimated_pairs
+    probe_evaluations=min(1001,scene.steps+1)*probes_count*(charged_count+sources_count)
+    if field_evaluations+probe_evaluations > 20_000_000:
+        raise PhysicsError('Electrostatic workload exceeds 20 million interaction evaluations; reduce duration, dt or charged components')
     max_rows=1001
     stride=max(1,math.ceil(scene.steps/(max_rows-1)))
     absorbed=_absorbed(scene,state,circuit)
@@ -630,6 +707,8 @@ def simulate(scene, output=None):
     for i in range(scene.steps):
         h=min(scene.dt, scene.duration-t)
         state=_resolve_collisions(scene,_rk4(scene,state,h))
+        if any(not math.isfinite(v) for values in state.values() for v in values):
+            raise PhysicsError('Non-finite mechanical state; decrease time step or inspect forces')
         absorbed=_absorbed(scene,state,circuit)
         for name,temp in temperatures.items():
             comp=scene.components[name]
@@ -649,7 +728,10 @@ def simulate(scene, output=None):
             'limitations':['No fluid flow, full Maxwell solver, induction, rigid rotation, or continuous collision detection',
                            'Ropes are compliant tension-only elements; lamp resistance and efficiency are constant',
                            'Electric fields exert forces on charges but do not automatically energize circuit terminals',
+                           'Electrostatic Coulomb fields assume a homogeneous 3D dielectric sampled in a 2D plane; no induction',
+                           'Charged objects use exterior spherical-shell fields; near-contact/interior interactions are not modeled',
                            'Optical absorption uses unshadowed point-source inverse-square flux; no spectral or wave optics',
+                           'Fixed charge sources and field probes are idealized and impose no mechanical contact',
                            'SI values are used internally; numeric inputs are treated as SI'],
             'interactions':scene.interactions,'duration_s':scene.duration,'steps':scene.steps,
             'initial':rows[0],'final':rows[-1],'samples':len(rows)}
@@ -661,6 +743,7 @@ def simulate(scene, output=None):
                                                     'interactions':scene.interactions,
                                                     'world':{'gravity':scene.gravity,
                                                     'electric_field':scene.electric_field,
+                                                    'relative_permittivity':scene.relative_permittivity,
                                                     'ambient_temperature':scene.ambient_temperature}},indent=2,sort_keys=True)+'\n',encoding='utf-8')
         with (path/'measurements.csv').open('w',newline='',encoding='utf-8') as handle:
             writer=csv.DictWriter(handle,fieldnames=rows[0].keys());writer.writeheader();writer.writerows(rows)
