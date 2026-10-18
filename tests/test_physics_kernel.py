@@ -219,9 +219,42 @@ class CompilerAndReplayTests(unittest.TestCase):
             with self.assertRaisesRegex(PhysicsError,'hash mismatch'):
                 verify_scene(dest)
 
+    def test_optical_flux_warms_separate_absorber(self):
+        root=Path(__file__).resolve().parents[1]/'examples/scenes'
+        model=load_scene(root/'opto_thermal.tev')
+        report,_=simulate(model)
+        end=report['final']
+        self.assertIn('radiative_absorption',[i['law'] for i in model.interactions])
+        self.assertAlmostEqual(end['emitter.light_power'],3.)
+        self.assertAlmostEqual(end['receiver.absorbed_power'],.075)
+        self.assertAlmostEqual(end['receiver.temperature']-293.15,1.5,places=6)
+
+    def test_inverse_square_optical_distance(self):
+        root=Path(__file__).resolve().parents[1]/'examples/scenes'
+        import tomllib
+        raw=tomllib.loads((root/'opto_thermal.tev').read_text())
+        close=simulate(compile_scene(raw))[0]['final']['receiver.absorbed_power']
+        raw['components'][2]['position']=[.6,0]
+        far=simulate(compile_scene(raw))[0]['final']['receiver.absorbed_power']
+        self.assertAlmostEqual(close,4*far,places=10)
+
+    def test_absorber_requires_thermal_properties(self):
+        body=sphere();body['absorptivity']=.8
+        with self.assertRaisesRegex(PhysicsError,'heat_capacity'):
+            model([body])
+
+    def test_no_power_no_light_no_absorber_heating(self):
+        root=Path(__file__).resolve().parents[1]/'examples/scenes'
+        import tomllib
+        raw=tomllib.loads((root/'opto_thermal.tev').read_text())
+        raw['connections']=[]
+        end=simulate(compile_scene(raw))[0]['final']
+        self.assertEqual(end['emitter.light_power'],0)
+        self.assertEqual(end['receiver.absorbed_power'],0)
+
     def test_example_compositions_execute(self):
         root=Path(__file__).resolve().parents[1]/'examples/scenes'
-        for filename in ('electrothermal.tev','ball_water_spring.tev'):
+        for filename in ('electrothermal.tev','ball_water_spring.tev','opto_thermal.tev'):
             with self.subTest(filename=filename):
                 report,rows=simulate(load_scene(root/filename))
                 self.assertEqual(report['status'],'simulated_not_validated')
