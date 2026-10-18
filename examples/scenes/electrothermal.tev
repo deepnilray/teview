@@ -1,0 +1,40 @@
+schema = 1
+title = "Battery, switch, and lamp: DC power -> heat + light"
+
+[world]
+duration = "5 s"
+dt = "0.01 s"
+
+[[definitions]]
+name = "reference_lamp"
+base = "lamp"
+resistance = "24 ohm"
+light_fraction = 0.15
+heat_capacity = "8 J/K"
+cooling = "0.4 W/K"
+
+[[components]]
+id = "cell"
+kind = "battery"
+voltage = "12 V"
+
+[[components]]
+id = "gate"
+kind = "switch"
+closed = true
+
+[[components]]
+id = "beacon"
+kind = "reference_lamp"
+
+[[connections]]
+a = "cell.positive"
+b = "gate.a"
+
+[[connections]]
+a = "gate.b"
+b = "beacon.a"
+
+[[connections]]
+a = "beacon.b"
+b = "cell.negative"
