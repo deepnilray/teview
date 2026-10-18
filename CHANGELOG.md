@@ -5,7 +5,7 @@
 - Add reusable typed components, automatic law discovery and dimensional checks.
 - Add 2D mechanical, fluid buoyancy, compliant springs and ropes, ideal DC circuits, electrothermal lamps and radiative heating of separate absorbers.
 - Add scene-check, scene-explain, simulate and scene-verify CLI commands.
-- Include independently assembled scene examples and analytical, failure and replay tests.
+- Include independently assembled scene examples, including five-domain composition, and analytical, failure and replay tests.
 - Preserve the previous experiment runner, capture and regression gate.
 - Document strict limitations and unsupported physical models.
 
