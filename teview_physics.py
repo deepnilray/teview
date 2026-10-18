@@ -570,6 +570,7 @@ def solve_circuit(scene):
 
 def _absorbed(scene, state, electric):
     result = {}
+    absorbed_from_emitter = defaultdict(float)
     for name in scene.bodies:
         sphere = scene.components[name]
         if sphere['absorptivity'] <= 0:
@@ -582,8 +583,14 @@ def _absorbed(scene, state, electric):
                                   state[name][1]-light['position'][1])
             if distance < sphere['radius']:
                 raise PhysicsError(f'{name}: radiator {light["id"]} is inside receiving sphere; point-optical model unsupported')
-            power += sphere['absorptivity']*electric[light['id']]['light_power']*sphere['radius']**2/(4*distance**2)
+            received = sphere['absorptivity']*electric[light['id']]['light_power']*sphere['radius']**2/(4*distance**2)
+            power += received
+            absorbed_from_emitter[light['id']] += received
         result[name]=power
+    for emitter_id, total in absorbed_from_emitter.items():
+        emitted = electric[emitter_id]['light_power']
+        if total > emitted * (1 + 1e-9):
+            raise PhysicsError(f'{emitter_id}: optical absorption exceeds emitted power; geometry or occlusion requires a higher-fidelity model')
     return result
 
 
