@@ -62,7 +62,7 @@ Each kind has a strict physical property schema. New named variants can be built
 
 A bulb in a static external field does **not** automatically light: a field is not necessarily an electrical power supply to the bulb. Electrical power and light are derived only if the DC network actually delivers current and voltage to the lamp.
 
-The simulator does not support fluid flow, finite-width tanks, magnetostatics, electromagnetic induction, nonlinear semiconductors, full optics, mechanical rotation, 3D dynamics, friction, continuous impact detection or an arbitrary differential-algebraic system.
+The simulator does not support fluid flow, finite-width tanks, magnetostatics, electromagnetic induction, nonlinear semiconductors, full optics, mechanical rotation, 3D dynamics, friction, shadows, spectral optics, continuous impact detection or an arbitrary differential-algebraic system.
 
 Fluids are idealized horizontal layers and may not overlap. Contacts are discrete and can tunnel at large steps. Highly stiff springs require smaller time steps. Light output is a scalar power value, not a rendered image or a radiation spectrum.
 
