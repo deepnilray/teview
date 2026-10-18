@@ -50,6 +50,7 @@ jobs:
           tev scene-check examples/scenes/electrothermal.tev
           tev scene-check examples/scenes/ball_water_spring.tev
           tev scene-check examples/scenes/opto_thermal.tev
+          tev scene-check examples/scenes/combined_lab.tev
       - name: Simulate independently composed components
         run: tev simulate examples/scenes/electrothermal.tev --out results/ci-lamp
       - name: Verify physical scene replay
@@ -59,3 +60,8 @@ jobs:
         run: tev simulate examples/scenes/opto_thermal.tev --out results/ci-optical
       - name: Replay radiative absorption simulation
         run: tev scene-verify results/ci-optical
+
+      - name: Execute emergent five-domain experiment
+        run: tev simulate examples/scenes/combined_lab.tev --out results/ci-combined
+      - name: Replay emergent five-domain experiment
+        run: tev scene-verify results/ci-combined
