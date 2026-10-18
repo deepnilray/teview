@@ -82,6 +82,10 @@ FIELDS = {
         'radius': ('length', None, True), 'mass': ('mass', None, True),
         'charge': ('charge', 0, False), 'drag': ('damping', 0, False),
         'restitution': ('fraction', 1, False),
+        'absorptivity': ('fraction', 0, False),
+        'heat_capacity': ('heat_capacity', None, False),
+        'temperature': ('temperature', 293.15, False),
+        'cooling': ('conductance', 0, False),
     },
     'anchor': {'position': ('vec:length', None, True)},
     'fluid': {
@@ -105,6 +109,7 @@ FIELDS = {
         'resistance': ('resistance', None, True), 'light_fraction': ('fraction', .08, False),
         'heat_capacity': ('heat_capacity', 10, False), 'cooling': ('conductance', .5, False),
         'temperature': ('temperature', 293.15, False),
+        'position': ('vec:length', None, False),
     },
     'switch': {'closed': ('bool', False, False)},
 }
@@ -122,6 +127,7 @@ LAW_EQUATIONS = {
     'floor_contact': 'Normal velocity reflects with coefficient of restitution',
     'ideal_dc_network': 'Kirchhoff node balance + Ohm law I = Delta(V)/R',
     'joule_heating_and_emission': 'P = I^2*R; P_light = efficiency*P; C*dT/dt = (1-efficiency)*P - h*(T-Tambient)',
+    'radiative_absorption': 'P_abs = absorptivity * P_light * r^2/(4*d^2); C*dT/dt = P_abs - h*(T-Tambient)',
 }
 
 
@@ -223,10 +229,16 @@ def compile_scene(raw, content=b''):
         for key, (dim, default, req) in FIELDS[kind].items():
             if req and key not in cfg:
                 raise PhysicsError(f'{name}: missing required property {key}')
-            part[key] = _read_field(cfg.get(key, default), dim, f'{name}.{key}')
+            value = cfg.get(key, default)
+            part[key] = None if value is None and not req else _read_field(value, dim, f'{name}.{key}')
         if kind == 'sphere':
             positive(part['radius'], f'{name}.radius')
             positive(part['mass'], f'{name}.mass')
+            positive(part['temperature'], f'{name}.temperature')
+            if part['absorptivity'] and part['heat_capacity'] is None:
+                raise PhysicsError(f'{name}: optical absorption needs explicit heat_capacity')
+            if part['heat_capacity'] is not None:
+                positive(part['heat_capacity'], f'{name}.heat_capacity')
         elif kind == 'fluid':
             positive(part['density'], f'{name}.density')
             if part['surface'] <= part['bottom']:
@@ -289,6 +301,14 @@ def compile_scene(raw, content=b''):
                 interactions.append({'law': 'buoyancy_and_drag', 'objects': [b['id'], f['id']]})
             elif f['kind'] == 'floor':
                 interactions.append({'law': 'floor_contact', 'objects': [b['id'], f['id']]})
+    absorbing = [p for p in spheres if p['absorptivity'] > 0]
+    emitters = [p for p in components.values() if p['kind'] == 'lamp']
+    if absorbing and emitters:
+        for lamp in emitters:
+            if lamp['position'] is None:
+                raise PhysicsError(f'{lamp["id"]}: position is needed for spatial optical interaction')
+            for recv in absorbing:
+                interactions.append({'law': 'radiative_absorption', 'objects': [lamp['id'], recv['id']]})
     for p in components.values():
         if p['kind'] in ELECTRICAL:
             interactions.append({'law': 'ideal_dc_network', 'objects': [p['id']]})
@@ -548,7 +568,26 @@ def solve_circuit(scene):
     return readings
 
 
-def _snapshot(scene, state, temperature, electric, time):
+def _absorbed(scene, state, electric):
+    result = {}
+    for name in scene.bodies:
+        sphere = scene.components[name]
+        if sphere['absorptivity'] <= 0:
+            continue
+        power=0.
+        for light in scene.components.values():
+            if light['kind'] != 'lamp':
+                continue
+            distance = math.hypot(state[name][0]-light['position'][0],
+                                  state[name][1]-light['position'][1])
+            if distance < sphere['radius']:
+                raise PhysicsError(f'{name}: radiator {light["id"]} is inside receiving sphere; point-optical model unsupported')
+            power += sphere['absorptivity']*electric[light['id']]['light_power']*sphere['radius']**2/(4*distance**2)
+        result[name]=power
+    return result
+
+
+def _snapshot(scene, state, temperature, electric, absorbed, time):
     result={'time':round(time,12)}
     for name in scene.bodies:
         x,y,vx,vy=state[name]
@@ -558,6 +597,8 @@ def _snapshot(scene, state, temperature, electric, time):
             result[f'{name}.{k}']=v
     for name,temp in temperature.items():
         result[f'{name}.temperature']=temp
+    for name,power in absorbed.items():
+        result[f'{name}.absorbed_power']=power
     return result
 
 
@@ -565,7 +606,8 @@ def simulate(scene, output=None):
     """Simulate independent DC circuit + electrothermal load + 2D mechanical laws."""
     state={name:(*scene.components[name]['position'],*scene.components[name]['velocity'])
            for name in scene.bodies}
-    temperatures={p['id']:p['temperature'] for p in scene.components.values() if p['kind']=='lamp'}
+    temperatures={p['id']:p['temperature'] for p in scene.components.values()
+                  if p['kind']=='lamp' or (p['kind']=='sphere' and p['heat_capacity'] is not None)}
     circuit=solve_circuit(scene)
     # Mechanical links: explicit numerics require resolution of the fastest timescale.
     for comp in scene.components.values():
@@ -575,30 +617,32 @@ def simulate(scene, output=None):
             raise PhysicsError(f'{comp["id"]}: dt too large for spring/rope stiffness; decrease world.dt')
     max_rows=1001
     stride=max(1,math.ceil(scene.steps/(max_rows-1)))
-    rows=[_snapshot(scene,state,temperatures,circuit,0.)]
+    absorbed=_absorbed(scene,state,circuit)
+    rows=[_snapshot(scene,state,temperatures,circuit,absorbed,0.)]
     t=0.
     for i in range(scene.steps):
         h=min(scene.dt, scene.duration-t)
         state=_resolve_collisions(scene,_rk4(scene,state,h))
+        absorbed=_absorbed(scene,state,circuit)
         for name,temp in temperatures.items():
-            lamp=scene.components[name]
-            power=circuit[name]['heat_power']
-            thermal=lamp['cooling']
+            comp=scene.components[name]
+            power=circuit[name]['heat_power'] if comp['kind']=='lamp' else absorbed.get(name,0.)
+            thermal=comp['cooling']
             ambient=scene.ambient_temperature
             if thermal:
-                decay=math.exp(-thermal*h/lamp['heat_capacity'])
+                decay=math.exp(-thermal*h/comp['heat_capacity'])
                 temperatures[name]=ambient+(temp-ambient)*decay+power/thermal*(1-decay)
             else:
-                temperatures[name]=temp+h*power/lamp['heat_capacity']
+                temperatures[name]=temp+h*power/comp['heat_capacity']
         t=min(scene.duration,t+h)
         if (i+1)%stride==0 or i==scene.steps-1:
-            rows.append(_snapshot(scene,state,temperatures,circuit,t))
+            rows.append(_snapshot(scene,state,temperatures,circuit,absorbed,t))
     report={'title':scene.title,'source_sha256':scene.source_hash,'status':'simulated_not_validated',
             'model':'2D translation with RK4, discrete contact, ideal DC MNA, lumped electrothermal light fraction',
             'limitations':['No fluid flow, full Maxwell solver, induction, rigid rotation, or continuous collision detection',
                            'Ropes are compliant tension-only elements; lamp resistance and efficiency are constant',
                            'Electric fields exert forces on charges but do not automatically energize circuit terminals',
-                           'Thermal radiation and optical transport are not modeled; light_power is a component output',
+                           'Optical absorption uses unshadowed point-source inverse-square flux; no spectral or wave optics',
                            'SI values are used internally; numeric inputs are treated as SI'],
             'interactions':scene.interactions,'duration_s':scene.duration,'steps':scene.steps,
             'initial':rows[0],'final':rows[-1],'samples':len(rows)}
