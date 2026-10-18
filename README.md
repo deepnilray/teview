@@ -1,10 +1,25 @@
 # TEVIEW
 
-**Run an experiment. Preserve the evidence. Reject regressions.**
+**Define components. Compose experiments. Inspect predictions and evidence.**
 
 TEVIEW is an open-source, Python 3.11+ command-line tool for computational experiments. It records source and declared data, runs candidate approaches, checks measurable acceptance criteria, and produces replayable evidence bundles. You can start with an existing script or define a full experimental protocol.
 
 TEVIEW runs locally, needs no server account, and its core has no third-party runtime dependencies. It is an **alpha**: it does not establish scientific validity, automatically reproduce untracked dependencies, or safely execute untrusted code.
+
+## Composable physical experiments (new in v0.4 alpha)
+
+TEVIEW includes an initial **text-first physical scene compiler**, separate from its established evidence runner. It defines reusable components, discovers supported interactions from physical properties, and runs mechanical, ideal DC and electrothermal models without programming each experiment arrangement.
+
+```bash
+tev scene-check examples/scenes/electrothermal.tev
+tev scene-explain examples/scenes/ball_water_spring.tev
+tev simulate examples/scenes/electrothermal.tev --out runs/lamp
+tev scene-verify runs/lamp
+```
+
+The independent scene examples combine a battery, switch and reusable lamp, or a charged sphere, electric field, liquid, floor and spring. Change a component's properties or connections and rerun: no experiment-specific handler is needed. The TOML-based syntax includes dimension-checked SI units.
+
+A lamp only emits the modeled light power when the computed circuit dissipates electrical power in it; a static external field alone does not energize a disconnected lamp. **TEVIEW is not yet a universal multiphysics simulator.** See [composable scenes and limitations](docs/composable-physics.md).
 
 ## Start with code you already have
 
@@ -97,4 +112,4 @@ python -m unittest discover -s tests -v
 
 CI exercises Windows, macOS and Linux with Python 3.11 and 3.13, including command capture, replay and the gate. See [architecture](docs/architecture.md), [security policy](SECURITY.md) and [contributing](CONTRIBUTING.md). Licensed under MIT.
 
-**Status: v0.3.0 alpha.** Backward compatibility is not yet guaranteed. External user adoption and independent scientific validation have not been established.
+**Status: v0.4.0 alpha.** Backward compatibility is not yet guaranteed. External user adoption and independent scientific validation have not been established.
