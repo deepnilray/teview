@@ -1,27 +1,21 @@
 """Cross-domain electrostatic composition tests."""
 import math
 import unittest
-
 from teview_physics import COULOMB, PhysicsError, compile_scene, simulate
-
 
 def sphere(name, x, charge, mass=1.0):
     return dict(id=name, kind='sphere', position=[x, 0], radius=.01,
                 mass=mass, charge=charge)
 
-
 def charge(name, x, q):
     return dict(id=name, kind='fixed_charge', position=[x, 0], charge=q)
-
 
 def probe(name, x):
     return dict(id=name, kind='field_probe', position=[x, 0])
 
-
 def scene(parts, **world):
-    return dict(schema=1, components=parts, world=dict(
-        gravity=[0, 0], duration=.01, dt=.001, **world))
-
+    return dict(schema=1, components=parts, world={
+        'gravity': [0, 0], 'duration': .01, 'dt': .001, **world})
 
 class ElectrostaticTests(unittest.TestCase):
     def test_inverse_square_and_potential(self):
@@ -103,7 +97,6 @@ class ElectrostaticTests(unittest.TestCase):
         parts = [sphere('q' + str(i), i + 1, 1e-10) for i in range(10)]
         with self.assertRaisesRegex(PhysicsError, 'workload'):
             simulate(compile_scene(scene(parts, duration=100, dt=.001)))
-
 
 if __name__ == '__main__':
     unittest.main()
