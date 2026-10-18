@@ -17,7 +17,7 @@ tev simulate examples/scenes/electrothermal.tev --out runs/lamp
 tev scene-verify runs/lamp
 ```
 
-The independent scene examples combine a battery and reusable lamp; a charged sphere, electric field, liquid, floor and spring; or a powered lamp that radiatively warms a separate absorbing sphere. Change a component's properties or connections and rerun: no experiment-specific handler is needed. The TOML-based syntax includes dimension-checked SI units.
+The independent scene examples combine a battery and reusable lamp; a charged sphere, electric field, liquid, floor and spring; a powered lamp that warms a separate absorbing sphere; and a single experimental assembly integrating mechanics, fluids, electric force, circuits, light and heat. Change a component's properties or connections and rerun: no experiment-specific handler is needed. The TOML-based syntax includes dimension-checked SI units.
 
 A lamp only emits the modeled light power when the computed circuit dissipates electrical power in it; a static external field alone does not energize a disconnected lamp. **TEVIEW is not yet a universal multiphysics simulator.** See [composable scenes and limitations](docs/composable-physics.md).
 
