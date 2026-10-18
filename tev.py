@@ -533,6 +533,14 @@ def main(argv=None):
     p.add_argument('--artifact',action='append',default=[],help='output artifact to hash (repeatable)')
     p.add_argument('--timeout',type=int,default=60);p.add_argument('--seed',type=int,default=0)
     p.add_argument('argv_command',nargs=argparse.REMAINDER)
+    p=sub.add_parser('scene-check', help='Check a composable physical scene and its units')
+    p.add_argument('scene')
+    p=sub.add_parser('scene-explain', help='List automatic physical interactions in a scene')
+    p.add_argument('scene')
+    p=sub.add_parser('simulate', help='Compile and simulate a composable physical scene')
+    p.add_argument('scene');p.add_argument('--out',required=True)
+    p=sub.add_parser('scene-verify', help='Replay and verify a saved physical scene')
+    p.add_argument('run_folder')
     p=sub.add_parser('init', help='Create an editable Python experiment starter')
     p.add_argument('directory')
     p=sub.add_parser('gate', help='Evaluate a candidate run against a versioned regression policy')
@@ -561,6 +569,25 @@ def main(argv=None):
             print(json.dumps(capture(args.root,args.out,code=args.code,data=args.data,
                      command=command_args,metrics=args.metrics,artifacts=args.artifact,
                      timeout=args.timeout,seed=args.seed),indent=2))
+        elif args.command in ('scene-check','scene-explain','simulate','scene-verify'):
+            from teview_physics import load_scene, simulate, verify_scene
+            if args.command=='scene-verify':
+                print(json.dumps(verify_scene(args.run_folder),indent=2))
+            else:
+                model=load_scene(args.scene)
+                if args.command=='scene-check':
+                    print(json.dumps({'status':'compiled','components':len(model.components),
+                                      'interactions':len(model.interactions)},indent=2))
+                elif args.command=='scene-explain':
+                    print(json.dumps({'title':model.title,'components':model.components,
+                                      'interactions':model.interactions},indent=2))
+                else:
+                    result,_=simulate(model,args.out)
+                    from pathlib import Path as _Path
+                    (_Path(args.out)/'scene.tev').write_bytes(_Path(args.scene).read_bytes())
+                    print(json.dumps({'status':result['status'], 'output':args.out,
+                                      'interactions':len(model.interactions),
+                                      'final':result['final']},indent=2))
         elif args.command=='init':
             from teview_starter import create_starter
             print(json.dumps(create_starter(args.directory),indent=2))
