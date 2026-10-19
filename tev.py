@@ -539,6 +539,11 @@ def main(argv=None):
     p.add_argument('scene')
     p=sub.add_parser('simulate', help='Compile and simulate a composable physical scene')
     p.add_argument('scene');p.add_argument('--out',required=True)
+    p=sub.add_parser('scene-converge', help='Check numerical time-step sensitivity')
+    p.add_argument('scene')
+    p.add_argument('--rtol', type=float, default=1e-3, help='relative tolerance')
+    p.add_argument('--atol', type=float, default=1e-6, help='absolute SI-unit tolerance')
+    p.add_argument('--json-out', help='optional output JSON path')
     p=sub.add_parser('scene-verify', help='Replay and verify a saved physical scene')
     p.add_argument('run_folder')
     p=sub.add_parser('init', help='Create an editable Python experiment starter')
@@ -588,6 +593,14 @@ def main(argv=None):
                     print(json.dumps({'status':result['status'], 'output':args.out,
                                       'interactions':len(model.interactions),
                                       'final':result['final']},indent=2))
+        elif args.command=='scene-converge':
+            from teview_accuracy import check_convergence
+            from teview_physics import load_scene
+            result=check_convergence(load_scene(args.scene), relative_tolerance=args.rtol,
+                                     absolute_tolerance=args.atol)
+            if args.json_out:save_json(Path(args.json_out),result)
+            print(json.dumps(result,indent=2))
+            return 0 if result['status']=='refinement_stable' else 2
         elif args.command=='init':
             from teview_starter import create_starter
             print(json.dumps(create_starter(args.directory),indent=2))
