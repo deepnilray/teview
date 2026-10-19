@@ -78,3 +78,7 @@ tev scene-verify runs/lamp
 ```
 
 The long-term architecture should add typed physical ports, a symbolic equation IR, extensible constitutive laws, nonlinear DAE solving, and verified adapters to existing numerical solvers. Do not add hardcoded experiment scenarios as a substitute for general laws.
+
+## Numerical sensitivity check
+
+`tev scene-converge <scene.tev> --rtol 1e-3 --atol 1e-6` reruns at three time-step refinements and checks final-state observables. Exit code 2 indicates sensitivity beyond tolerance, not a defective physical law. This is not a proof of global numerical error or experimental validity. See [engineering strategy](engineering-strategy.md).
