@@ -539,13 +539,16 @@ def main(argv=None):
     p.add_argument('scene')
     p=sub.add_parser('simulate', help='Compile and simulate a composable physical scene')
     p.add_argument('scene');p.add_argument('--out',required=True)
-    p=sub.add_parser('scene-converge', help='Check numerical time-step sensitivity')
+    p=sub.add_parser('scene-converge', help='Check time-step sensitivity of a physical scene')
     p.add_argument('scene')
-    p.add_argument('--rtol', type=float, default=1e-3, help='relative tolerance')
-    p.add_argument('--atol', type=float, default=1e-6, help='absolute SI-unit tolerance')
-    p.add_argument('--json-out', help='optional output JSON path')
+    p.add_argument('--rtol',type=float,default=1e-3,help='relative final-state refinement tolerance')
+    p.add_argument('--atol',type=float,default=1e-6,help='absolute SI-unit final-state tolerance')
+    p.add_argument('--json-out',help='optional path for the diagnostic JSON')
     p=sub.add_parser('scene-verify', help='Replay and verify a saved physical scene')
     p.add_argument('run_folder')
+    p=sub.add_parser('visualize', help='Generate a self-contained HTML viewer for a saved physical scene')
+    p.add_argument('run_folder');p.add_argument('--out',help='HTML output path (default: run_folder/viewer.html)')
+    p.add_argument('--verify-evidence',action='store_true',help='Replay and verify saved simulation before rendering')
     p=sub.add_parser('init', help='Create an editable Python experiment starter')
     p.add_argument('directory')
     p=sub.add_parser('gate', help='Evaluate a candidate run against a versioned regression policy')
@@ -594,13 +597,22 @@ def main(argv=None):
                                       'interactions':len(model.interactions),
                                       'final':result['final']},indent=2))
         elif args.command=='scene-converge':
-            from teview_accuracy import check_convergence
             from teview_physics import load_scene
-            result=check_convergence(load_scene(args.scene), relative_tolerance=args.rtol,
+            from teview_accuracy import check_convergence
+            result=check_convergence(load_scene(args.scene),relative_tolerance=args.rtol,
                                      absolute_tolerance=args.atol)
             if args.json_out:save_json(Path(args.json_out),result)
             print(json.dumps(result,indent=2))
             return 0 if result['status']=='refinement_stable' else 2
+        elif args.command=='visualize':
+            from teview_visual import render_scene
+            result = render_scene(args.run_folder, args.out) if not args.verify_evidence else None
+            if args.verify_evidence:
+                from teview_physics import verify_scene
+                verification = verify_scene(args.run_folder)
+                result = render_scene(args.run_folder, args.out)
+                result['verification'] = verification['status']
+            print(json.dumps(result,indent=2))
         elif args.command=='init':
             from teview_starter import create_starter
             print(json.dumps(create_starter(args.directory),indent=2))

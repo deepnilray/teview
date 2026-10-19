@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "teview-evidence-core"
-version = "0.5.1a0"
-description = "Composable physical experiments with reproducible numerical results"
+version = "0.5.2a0"
+description = "Composable physical experiments, reproducible computation, and offline visualization"
 requires-python = ">=3.11"
 license = {text = "MIT"}
 readme = "README.md"
@@ -14,6 +14,13 @@ dependencies = []
 
 [project.scripts]
 tev = "tev:main"
+teview = "teview_desktop:main"
 
 [tool.setuptools]
-py-modules = ["tev", "teview_gate", "teview_starter", "teview_capture", "teview_physics", "teview_accuracy"]
+py-modules = ["tev", "teview_gate", "teview_starter", "teview_capture", "teview_physics", "teview_accuracy", "teview_visual", "teview_visual_template", "teview_desktop", "teview_executable"]
+
+[tool.setuptools.package-data]
+teview_examples = ["*.tev"]
+
+[tool.setuptools.packages.find]
+include = ["teview_examples"]

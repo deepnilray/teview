@@ -1,0 +1,36 @@
+schema = 1
+title = "Electrically powered source heats a separate receiving sphere"
+
+[world]
+gravity = [0, 0]
+duration = "4 s"
+dt = "0.01 s"
+
+[[components]]
+id = "supply"
+kind = "battery"
+voltage = "12 V"
+
+[[components]]
+id = "emitter"
+kind = "lamp"
+position = [0, 0]
+resistance = "24 ohm"
+light_fraction = 0.5
+
+[[components]]
+id = "receiver"
+kind = "sphere"
+position = ["0.3 m", 0]
+radius = "0.1 m"
+mass = "0.4 kg"
+absorptivity = 0.9
+heat_capacity = "0.2 J/K"
+
+[[connections]]
+a = "supply.positive"
+b = "emitter.a"
+
+[[connections]]
+a = "emitter.b"
+b = "supply.negative"
