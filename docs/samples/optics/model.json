@@ -1,0 +1,96 @@
+{
+  "components": {
+    "emitter": {
+      "cooling": 0.5,
+      "heat_capacity": 10.0,
+      "id": "emitter",
+      "kind": "lamp",
+      "light_fraction": 0.5,
+      "position": [
+        0.0,
+        0.0
+      ],
+      "resistance": 24.0,
+      "temperature": 293.15
+    },
+    "receiver": {
+      "absorptivity": 0.9,
+      "charge": 0.0,
+      "cooling": 0.0,
+      "drag": 0.0,
+      "heat_capacity": 0.2,
+      "id": "receiver",
+      "kind": "sphere",
+      "mass": 0.4,
+      "position": [
+        0.3,
+        0.0
+      ],
+      "radius": 0.1,
+      "restitution": 1.0,
+      "temperature": 293.15,
+      "velocity": [
+        0.0,
+        0.0
+      ]
+    },
+    "supply": {
+      "id": "supply",
+      "kind": "battery",
+      "voltage": 12.0
+    }
+  },
+  "connections": [
+    [
+      "supply.positive",
+      "emitter.a"
+    ],
+    [
+      "emitter.b",
+      "supply.negative"
+    ]
+  ],
+  "interactions": [
+    {
+      "equation": "P_abs = absorptivity * P_light * r^2/(4*d^2); C*dT/dt = P_abs - h*(T-Tambient)",
+      "law": "radiative_absorption",
+      "objects": [
+        "emitter",
+        "receiver"
+      ]
+    },
+    {
+      "equation": "Kirchhoff node balance + Ohm law I = Delta(V)/R",
+      "law": "ideal_dc_network",
+      "objects": [
+        "supply"
+      ]
+    },
+    {
+      "equation": "Kirchhoff node balance + Ohm law I = Delta(V)/R",
+      "law": "ideal_dc_network",
+      "objects": [
+        "emitter"
+      ]
+    },
+    {
+      "equation": "P = I^2*R; P_light = efficiency*P; C*dT/dt = (1-efficiency)*P - h*(T-Tambient)",
+      "law": "joule_heating_and_emission",
+      "objects": [
+        "emitter"
+      ]
+    }
+  ],
+  "world": {
+    "ambient_temperature": 293.15,
+    "electric_field": [
+      0.0,
+      0.0
+    ],
+    "gravity": [
+      0.0,
+      0.0
+    ],
+    "relative_permittivity": 1.0
+  }
+}

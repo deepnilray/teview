@@ -1,0 +1,44 @@
+schema = 1
+title = "A charged sphere suspended in water by an independent spring"
+
+[world]
+gravity = [0, "-9.81 m/s^2"]
+electric_field = ["25 V/m", 0]
+duration = "2 s"
+dt = "0.002 s"
+
+[[components]]
+id = "payload"
+kind = "sphere"
+position = [0, "0.25 m"]
+velocity = [0, 0]
+radius = "6 cm"
+mass = "2.4 kg"
+charge = "0.02 C"
+
+[[components]]
+id = "fixed_support"
+kind = "anchor"
+position = [0, "1.1 m"]
+
+[[components]]
+id = "water_bath"
+kind = "fluid"
+surface = "0.5 m"
+bottom = "-1 m"
+density = "1000 kg/m^3"
+drag = "3 N*s/m"
+
+[[components]]
+id = "suspension"
+kind = "spring"
+a = "fixed_support"
+b = "payload"
+stiffness = "24 N/m"
+rest_length = "0.65 m"
+damping = "1 N*s/m"
+
+[[components]]
+id = "ground"
+kind = "floor"
+height = "-0.95 m"

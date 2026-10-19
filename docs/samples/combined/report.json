@@ -1,0 +1,121 @@
+{
+  "duration_s": 2.0,
+  "final": {
+    "battery.voltage": 12.0,
+    "lamp.current": 0.5,
+    "lamp.heat_power": 4.199999999999999,
+    "lamp.light_power": 1.7999999999999998,
+    "lamp.power": 6.0,
+    "lamp.temperature": 293.94936568849135,
+    "lamp.voltage": 12.0,
+    "payload.absorbed_power": 0.012052827788804274,
+    "payload.temperature": 293.2115697021854,
+    "payload.vx": 0.011562839487718317,
+    "payload.vy": 0.014696117860284626,
+    "payload.x": 0.13458581884924364,
+    "payload.y": 0.33966899206076384,
+    "time": 2.0
+  },
+  "initial": {
+    "battery.voltage": 12.0,
+    "lamp.current": 0.5,
+    "lamp.heat_power": 4.199999999999999,
+    "lamp.light_power": 1.7999999999999998,
+    "lamp.power": 6.0,
+    "lamp.temperature": 293.15,
+    "lamp.voltage": 12.0,
+    "payload.absorbed_power": 0.006399999999999999,
+    "payload.temperature": 293.15,
+    "payload.vx": 0.0,
+    "payload.vy": 0.0,
+    "payload.x": 0.0,
+    "payload.y": 0.25,
+    "time": 0.0
+  },
+  "interactions": [
+    {
+      "equation": "F = m*g",
+      "law": "gravity",
+      "objects": [
+        "payload"
+      ]
+    },
+    {
+      "equation": "F = q*E",
+      "law": "electric_force",
+      "objects": [
+        "payload"
+      ]
+    },
+    {
+      "equation": "F_buoyancy = -rho*V_submerged*g; F_drag = -c*(V_submerged/V_sphere)*v",
+      "law": "buoyancy_and_drag",
+      "objects": [
+        "payload",
+        "water"
+      ]
+    },
+    {
+      "equation": "Normal velocity reflects with coefficient of restitution",
+      "law": "floor_contact",
+      "objects": [
+        "payload",
+        "floor"
+      ]
+    },
+    {
+      "equation": "P_abs = absorptivity * P_light * r^2/(4*d^2); C*dT/dt = P_abs - h*(T-Tambient)",
+      "law": "radiative_absorption",
+      "objects": [
+        "lamp",
+        "payload"
+      ]
+    },
+    {
+      "equation": "F_tension = k*(length-rest_length) + damping*d(length)/dt",
+      "law": "hooke",
+      "objects": [
+        "support",
+        "suspension",
+        "payload"
+      ]
+    },
+    {
+      "equation": "Kirchhoff node balance + Ohm law I = Delta(V)/R",
+      "law": "ideal_dc_network",
+      "objects": [
+        "battery"
+      ]
+    },
+    {
+      "equation": "Kirchhoff node balance + Ohm law I = Delta(V)/R",
+      "law": "ideal_dc_network",
+      "objects": [
+        "lamp"
+      ]
+    },
+    {
+      "equation": "P = I^2*R; P_light = efficiency*P; C*dT/dt = (1-efficiency)*P - h*(T-Tambient)",
+      "law": "joule_heating_and_emission",
+      "objects": [
+        "lamp"
+      ]
+    }
+  ],
+  "limitations": [
+    "No fluid flow, full Maxwell solver, induction, rigid rotation, or continuous collision detection",
+    "Ropes are compliant tension-only elements; lamp resistance and efficiency are constant",
+    "Electric fields exert forces on charges but do not automatically energize circuit terminals",
+    "Electrostatic Coulomb fields assume a homogeneous 3D dielectric sampled in a 2D plane; no induction",
+    "Charged objects use exterior spherical-shell fields; near-contact/interior interactions are not modeled",
+    "Optical absorption uses unshadowed point-source inverse-square flux; no spectral or wave optics",
+    "Fixed charge sources and field probes are idealized and impose no mechanical contact",
+    "SI values are used internally; numeric inputs are treated as SI"
+  ],
+  "model": "2D translation with RK4, discrete contact, ideal DC MNA, lumped electrothermal light fraction",
+  "samples": 1001,
+  "source_sha256": "814cfbdae4e0d190d5ea4ff9976078b4dd9c8169c20d8f18abfc63ae0f9593db",
+  "status": "simulated_not_validated",
+  "steps": 1000,
+  "title": "Mechanical, fluid, electric, light and heat interactions in one new assembly"
+}

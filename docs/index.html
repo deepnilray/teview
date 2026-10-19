@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>TEVIEW Studio — Physical experiment workbench</title>
+<style>
+:root{--bg:#080e17;--pane:#0c1520;--panel:#111d2c;--line:#293a4d;--ink:#eaf1fa;--muted:#99aac0;--accent:#5cc0f6;--teal:#7bdbbc;--warn:#e8b57d;--error:#fa9386;--mono:ui-monospace,SFMono-Regular,Consolas,'Liberation Mono',monospace}
+*{box-sizing:border-box}html,body{margin:0;width:100%;min-height:100%;background:var(--bg);color:var(--ink);font:13px/1.45 Inter,system-ui,-apple-system,'Segoe UI',sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}button{cursor:pointer}button:disabled{opacity:.5;cursor:not-allowed}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{height:100dvh;min-height:600px;display:flex;flex-direction:column;overflow:hidden}
+.top{display:flex;align-items:center;gap:20px;min-height:68px;padding:0 20px;background:#0b1420;border-bottom:1px solid var(--line)}
+.brand{font-weight:850;letter-spacing:.15em;font-size:19px;white-space:nowrap}.brand strong{color:var(--accent)}.divider{width:1px;height:31px;background:var(--line)}.headtext{flex:1;min-width:0}.headtext h1{font-size:14px;letter-spacing:.01em;font-weight:650;margin:0}.headtext p{font-size:11px;color:var(--muted);margin:3px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tag{white-space:nowrap;border:1px solid #30536a;border-radius:4px;color:#a9dcf6;font-size:10px;padding:7px 10px;letter-spacing:.09em}.top .action{margin-left:auto}
+.layout{flex:1;display:grid;grid-template-columns:minmax(310px,370px) minmax(0,1fr);min-height:0}.layout.editor-hidden{grid-template-columns:0 minmax(0,1fr)}.layout.editor-hidden .editor-panel{display:none}
+.editor-panel{background:#0b1521;border-right:1px solid var(--line);display:flex;flex-direction:column;min-width:0;min-height:0}.section-head,.result-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--line);min-height:51px}.title{font-size:11px;font-weight:760;letter-spacing:.09em;text-transform:uppercase}.caption{font-size:10px;color:var(--muted);white-space:nowrap}
+.historybar{display:flex;align-items:center;gap:8px;padding:9px 13px;border-bottom:1px solid var(--line)}.historybar label{color:var(--muted);white-space:nowrap;font-size:11px}.historybar select{min-width:0;flex:1;color:var(--ink);background:#17283b;border:1px solid #3c556d;border-radius:5px;padding:7px}.controls{padding:14px 15px 13px;border-bottom:1px solid var(--line)}.controls label{display:block;color:var(--muted);font-size:11px;margin-bottom:8px}.controls select{width:100%;padding:10px 12px;border-radius:6px;border:1px solid #37506b;background:#17283c;color:var(--ink);outline-offset:1px}.editor-actions{display:flex;align-items:center;gap:8px;padding:9px 13px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.btn{border:1px solid #3c556d;background:#17283b;color:var(--ink);padding:8px 12px;border-radius:5px;font-weight:560;white-space:nowrap}.btn:hover{border-color:#6ab8e1;background:#1c344c}.btn.primary{background:#17618d;color:#fff;border-color:#2e91c8;font-weight:720}.btn.primary:hover{background:#2478a7}.btn.slim{padding:7px 9px}.btn.quiet{background:transparent;border-color:transparent;color:#b5c6da}.btn.quiet:hover{border-color:var(--line)}
+#source{flex:1;width:100%;min-height:160px;border:none;resize:none;background:#0b1521;color:#c8e1f1;padding:18px 17px;line-height:1.65;font:12.5px/1.6 var(--mono);white-space:pre;tab-size:4;outline:none}#source:focus{background:#0b1725;outline:none}.helper{border-top:1px solid var(--line);padding:14px 15px;color:var(--muted);font-size:11px}.helper strong{display:block;color:#d6e5f4;margin-bottom:7px;font-weight:650}.helper code{color:#88c6e8;font:11px var(--mono)}
+.checkrow{display:flex;align-items:center;gap:9px;color:var(--muted);font-size:11px;margin:0 0 13px 1px}.checkrow input{accent-color:#5cc0f6}
+.visual-panel{display:flex;flex-direction:column;min-width:0;min-height:0;background:#0a111c}.result-head{background:#101b29}.result-meta{color:var(--muted);font:11px var(--mono);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.result-buttons{display:flex;align-items:center;gap:5px}.framebox{position:relative;flex:1;min-height:0}.framebox iframe{display:block;width:100%;height:100%;border:0;background:#080e17}.placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:40px;background:radial-gradient(circle at 50% 30%,#152a40 0%,#0a1420 47%,#080e17 85%);color:#aebfd4}.placeholder h2{color:#edf6ff;font-size:23px;font-weight:570;letter-spacing:-.04em;margin:0 0 10px}.placeholder p{max-width:42ch;margin:0 auto;color:var(--muted);line-height:1.7}.placeholder .schematic{font:11px/1.7 var(--mono);letter-spacing:.04em;color:#62bce2;margin:0 0 21px}
+.statusbar{display:flex;align-items:center;gap:9px;min-height:38px;border-top:1px solid var(--line);padding:0 18px;background:#0a121c;color:var(--muted);font-size:11px}.status-dot{display:inline-block;background:#8b9db1;width:7px;height:7px;border-radius:50%;flex:none}.status-dot.ok{background:var(--teal)}.status-dot.error{background:var(--error)}.status-dot.busy{background:var(--warn)}#status{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}.accuracy{margin-left:auto;white-space:nowrap;color:#7f92a9}
+#errorPanel{padding:12px 15px;background:#251a22;border-top:1px solid #75434f;color:#fac5bf;font:12px/1.55 var(--mono);white-space:pre-wrap;word-break:break-word;display:none;max-height:190px;overflow-y:auto}#errorPanel.visible{display:block}
+#insight{display:none;gap:12px;padding:9px 16px;background:#102232;border-bottom:1px solid #30516c;color:#bbd8ee;flex-wrap:wrap;font-size:11px}#insight.visible{display:flex}#insight strong{color:#d2edff;font-weight:600}.spinner{display:none;animation:spin 1s linear infinite;border:2px solid #37506b;border-top-color:#83dafc;border-radius:100%;width:12px;height:12px}.spinner.visible{display:inline-block}@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:1100px){.layout{grid-template-columns:320px minmax(0,1fr)}.tag{display:none}.headtext p{white-space:normal}}
+@media(max-width:800px){.app{height:auto;min-height:100dvh;overflow:visible}.top{height:auto;min-height:64px;padding:11px 14px}.top .divider{display:none}.headtext h1{font-size:12px}.layout,.layout.editor-hidden{display:flex;flex-direction:column}.editor-panel{border-right:0;border-bottom:1px solid var(--line);min-height:330px;max-height:490px}.layout.editor-hidden .editor-panel{display:none}.visual-panel{min-height:1120px}.framebox{min-height:1000px}.statusbar{position:sticky;bottom:0}.result-head{flex-wrap:wrap}.accuracy{display:none}.helper{padding:9px 13px}#source{min-height:190px}.framebox iframe{min-height:1000px}}
+@media(prefers-reduced-motion:reduce){.spinner{animation:none}}
+
+.site-action{margin-left:auto;color:#e9f5ff;text-decoration:none;background:#17618d;border:1px solid #2e91c8;border-radius:5px;padding:9px 12px;font-weight:700;font-size:11px;white-space:nowrap}
+.site-action:hover{background:#2478a7}
+.web-disclaimer{font-size:11px;background:#192636;border-bottom:1px solid #395066;color:#bdd7ed;padding:8px 17px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.web-disclaimer strong{color:#f3d69d}
+.web-disclaimer a{color:#8ed5ff;text-decoration:underline}
+.source-hint{color:#eed1a0;background:#2a2631;padding:9px 14px;border-bottom:1px solid #614e4b;font-size:11px;display:none}
+.source-hint.visible{display:block}
+.site-footer{font-size:11px;color:#8ca4bb;border-top:1px solid #273847;background:#0b1420;padding:8px 18px;display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.site-footer a{color:#81c7ee}
+@media(max-width:800px){.site-action{font-size:10px;padding:7px}.top{gap:8px;flex-wrap:wrap}.headtext{flex-basis:35%}.site-footer{font-size:10px}}
+</style>
+</head>
+<body>
+<div class="app">
+ <header class="top"><div class="brand">TE<strong>VIEW</strong></div><div class="divider"></div><div class="headtext"><h1>Scientific experiment studio</h1><p>Explore real computed results · Compare configurations · Download and simulate locally</p></div><span class="tag">PUBLIC DEMO · RECORDED RUNS</span><a class="site-action" href="downloads/TEVIEW_Studio_v0.5.4.zip" rel="noopener">Download source ↓</a></header>
+ <div class="web-disclaimer"><strong>Interactive playback—not a cloud physics solver.</strong> Every shown state comes from a saved TEVIEW computation, replay-checked locally. To simulate your edits, install TEVIEW Studio on your computer. <a href="https://github.com/deepnilray/teview">Get TEVIEW</a></div><div class="layout" id="layout">
+  <aside class="editor-panel" aria-label="Experiment source editor">
+    <div class="section-head"><span class="title">Experiment source</span><span class="caption">.tev / TOML</span></div>
+    <div class="controls"><label for="example">Explore a computed experiment</label><select id="example" aria-label="Choose experiment"><option>Loading experiments…</option></select></div>
+    <div class="editor-actions"><button class="btn primary" id="run">Load recorded run <span aria-hidden="true">▶</span></button><button class="btn" id="import" title="Open a .tev or TOML experiment from your computer">Open .tev</button><input id="fileInput" type="file" accept=".tev,.toml,text/plain" hidden><button class="btn" id="download" title="Save the edited .tev source to your computer">Save .tev</button><button class="btn quiet" id="restore">Restore example</button></div>
+    <div class="historybar"><label for="history">Viewed runs</label><select id="history" aria-label="Previous simulated runs"><option value="">No previous runs</option></select><button class="btn slim" id="restoreRun" title="Load saved source from this run">Load source</button></div>
+    <div id="sourceHint" class="source-hint">Source changed. This public demo cannot recompute it. Download your edited .tev and run it with TEVIEW Studio.</div><textarea id="source" spellcheck="false" aria-label="Experiment source code" autocomplete="off" autocapitalize="off" placeholder="Select an experiment to start" wrap="off"></textarea>
+    <div class="helper"><label class="checkrow"><input type="checkbox" id="verify" checked> Recorded examples passed replay verification</label><strong>Inspect the experiment, not an animation script.</strong>Browse verified recorded runs. Save or edit their source; use local Studio for new computation. <code>Ctrl+Enter</code> runs.</div>
+  </aside>
+  <main class="visual-panel" aria-label="Numerical simulation results">
+    <div class="result-head"><span class="title">Simulation viewer <span class="result-meta" id="currentRun"></span></span><div class="result-buttons"><button class="btn slim quiet" id="toggleEditor" aria-expanded="true">Hide source</button><button class="btn slim" id="openViewer" disabled>Full viewer ↗</button><button class="btn slim" id="getCsv" disabled>CSV ↓</button></div></div>
+    <div id="insight" role="status"></div>
+    <div id="errorPanel" role="alert"></div>
+    <div class="framebox"><div id="placeholder" class="placeholder"><div><div class="schematic">COMPONENTS → PHYSICAL LAWS → NUMERICAL STATES</div><h2>Observe the experiment. Change the hypothesis.</h2><p>Select a working scene, edit its components, and run a real calculation. All graphics are generated from saved measurements, not scripted motion.</p></div></div><iframe id="viewer" title="Scientific simulation viewer" sandbox="allow-scripts allow-downloads" loading="eager"></iframe></div>
+  </main>
+ </div>
+ <footer class="statusbar"><span class="status-dot" id="statusDot"></span><span class="spinner" id="spinner"></span><span id="status">Loading experiment library…</span><span class="accuracy">Numerical model ≠ experimental validation</span></footer>
+</div>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const state={entries:[],current:null,run:null,base:'',dirty:false,history:[],busy:false};
+const BASE='samples/';
+const DRAFT='teview-public-demo-draft-v1';
+function status(message,kind=''){ $('status').textContent=message;$('statusDot').className='status-dot '+kind;$('spinner').classList.toggle('visible',kind==='busy') }
+function error(message){$('errorPanel').textContent=message;$('errorPanel').classList.add('visible')}
+function clearError(){$('errorPanel').textContent='';$('errorPanel').classList.remove('visible')}
+function saveDraft(){try{localStorage.setItem(DRAFT,JSON.stringify({example:state.current,source:$('source').value}))}catch(e){}}
+function downloadFile(name,content,mime){const blob=new Blob([content],{type:mime});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),10000)}
+async function getText(url){const r=await fetch(url);if(!r.ok)throw Error('Unable to load '+url);return await r.text()}
+function updateHistory(){const select=$('history');select.replaceChildren();if(!state.history.length){select.add(new Option('No viewed runs',''));return}state.history.forEach((run,index)=>{select.add(new Option(run.label+' · '+run.when,String(index)))});select.value='0'}
+function loadViewer(entry){state.run=entry;$('placeholder').style.display='none';$('viewer').src=entry.file+'?id='+encodeURIComponent(entry.sha256.slice(0,12));$('currentRun').textContent=' / '+entry.label+' · recorded computation';$('openViewer').disabled=false;$('getCsv').disabled=false;const box=$('insight');box.replaceChildren();for(const [label,value] of [['OBJECTS',entry.components],['INTERACTIONS',entry.interactions],['FRAMES',entry.samples],['REPLAY',entry.replay],['STATUS','Model not independently validated']]){const span=document.createElement('span');const strong=document.createElement('strong');strong.textContent=label+' ';span.append(strong,document.createTextNode(String(value)));box.append(span)}box.classList.add('visible');status('Showing computed experiment · '+entry.samples+' recorded states · deterministic replay checked','ok');state.history.unshift({...entry,when:new Date().toLocaleTimeString()});state.history=state.history.slice(0,20);updateHistory()}
+async function loadExample(id,force=false){if(state.dirty&&!force&&!confirm('Replace the unsaved source changes?')){$('example').value=state.current;return}const entry=state.entries.find(e=>e.id===id);if(!entry)throw Error('Unknown example '+id);const src=await getText(entry.source);state.current=id;state.base=src;state.dirty=false;$('source').value=src;$('sourceHint').classList.remove('visible');$('example').value=id;clearError();saveDraft();loadViewer(entry);location.hash='scene='+encodeURIComponent(id)}
+function playRecorded(){clearError();if(state.dirty){$('sourceHint').classList.add('visible');status('Edited .tev must be run in desktop Studio — download the file to continue','error');error('This public site only plays computed results of its published experiments. An edited source has no computed result yet. Save your .tev and use local TEVIEW Studio to calculate new states.');return}const entry=state.entries.find(e=>e.id===state.current);if(entry)loadViewer(entry)}
+$('source').addEventListener('input',()=>{state.dirty=$('source').value!==state.base;$('sourceHint').classList.toggle('visible',state.dirty);saveDraft();status(state.dirty?'Source edited; download it to compute a new experiment locally':'Source matches this recorded experiment','')});
+$('run').addEventListener('click',playRecorded);
+$('source').addEventListener('keydown',e=>{if(e.key==='Tab'){e.preventDefault();e.currentTarget.setRangeText('    ',e.currentTarget.selectionStart,e.currentTarget.selectionEnd,'end')}});
+$('download').addEventListener('click',()=>downloadFile((state.current||'experiment')+'.tev',$('source').value,'text/plain;charset=utf-8'));
+$('restore').addEventListener('click',()=>loadExample(state.current));
+$('example').addEventListener('change',e=>loadExample(e.target.value).catch(err=>error(err.message)));
+$('import').addEventListener('click',()=>$('fileInput').click());
+$('fileInput').addEventListener('change',async e=>{const f=e.target.files?.[0];if(!f)return;if(f.size>65536){error('File exceeds 64 KB');return}try{$('source').value=await f.text();state.dirty=true;$('sourceHint').classList.add('visible');saveDraft();status('Loaded local source; save it and run in desktop Studio','');}catch(err){error(err.message)}e.target.value=''});
+$('history').addEventListener('change',e=>{const entry=state.history[Number(e.target.value)];if(entry)loadViewer(entry)});
+$('restoreRun').addEventListener('click',async()=>{const entry=state.history[Number($('history').value)];if(entry)await loadExample(entry.id,true)});
+$('openViewer').addEventListener('click',()=>{if(state.run)open(state.run.file,'_blank','noopener')});
+$('getCsv').addEventListener('click',()=>{if(state.run)open(state.run.csv,'_blank','noopener')});
+$('toggleEditor').addEventListener('click',()=>{let hidden=$('layout').classList.toggle('editor-hidden');$('toggleEditor').textContent=hidden?'Show source':'Hide source';$('toggleEditor').setAttribute('aria-expanded',String(!hidden))});
+window.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();playRecorded()}});
+(async()=>{try{const r=await fetch('experiments.json');if(!r.ok)throw Error('Example catalogue unavailable');state.entries=await r.json();const select=$('example');select.replaceChildren();state.entries.forEach(e=>select.add(new Option(e.label,e.id)));const hash=location.hash.match(/scene=([a-z0-9-]+)/);const requested=hash?decodeURIComponent(hash[1]):'ball';await loadExample(state.entries.some(e=>e.id===requested)?requested:'ball',true);try{const draft=JSON.parse(localStorage.getItem(DRAFT)||'null');if(draft?.source&&draft.source!==state.base&&draft.source.length<65536&&confirm('Restore an unsaved source draft from this browser?')){$('source').value=draft.source;state.dirty=true;$('sourceHint').classList.add('visible');status('Draft restored; changes require a local simulation','')}}catch(e){}}catch(e){error(e.message);status('Could not initialize the public viewer','error')}})();
+</script>
+<footer class="site-footer"><span>TEVIEW · Experimental numerical models, not validated laboratory measurements</span><span><a href="https://github.com/deepnilray/teview">Source / tests</a> · <a href="https://github.com/deepnilray/teview/issues/new">Report an issue</a> · <a href="downloads/TEVIEW_Studio_v0.5.4.zip">Download software</a></span></footer></body></html>

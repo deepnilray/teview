@@ -1,0 +1,80 @@
+{
+  "components": {
+    "beacon": {
+      "cooling": 0.4,
+      "heat_capacity": 8.0,
+      "id": "beacon",
+      "kind": "lamp",
+      "light_fraction": 0.15,
+      "position": null,
+      "resistance": 24.0,
+      "temperature": 293.15
+    },
+    "cell": {
+      "id": "cell",
+      "kind": "battery",
+      "voltage": 12.0
+    },
+    "gate": {
+      "closed": true,
+      "id": "gate",
+      "kind": "switch"
+    }
+  },
+  "connections": [
+    [
+      "cell.positive",
+      "gate.a"
+    ],
+    [
+      "gate.b",
+      "beacon.a"
+    ],
+    [
+      "beacon.b",
+      "cell.negative"
+    ]
+  ],
+  "interactions": [
+    {
+      "equation": "Kirchhoff node balance + Ohm law I = Delta(V)/R",
+      "law": "ideal_dc_network",
+      "objects": [
+        "cell"
+      ]
+    },
+    {
+      "equation": "Kirchhoff node balance + Ohm law I = Delta(V)/R",
+      "law": "ideal_dc_network",
+      "objects": [
+        "gate"
+      ]
+    },
+    {
+      "equation": "Kirchhoff node balance + Ohm law I = Delta(V)/R",
+      "law": "ideal_dc_network",
+      "objects": [
+        "beacon"
+      ]
+    },
+    {
+      "equation": "P = I^2*R; P_light = efficiency*P; C*dT/dt = (1-efficiency)*P - h*(T-Tambient)",
+      "law": "joule_heating_and_emission",
+      "objects": [
+        "beacon"
+      ]
+    }
+  ],
+  "world": {
+    "ambient_temperature": 293.15,
+    "electric_field": [
+      0.0,
+      0.0
+    ],
+    "gravity": [
+      0.0,
+      -9.81
+    ],
+    "relative_permittivity": 1.0
+  }
+}

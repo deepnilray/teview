@@ -1,0 +1,166 @@
+{
+  "components": {
+    "battery": {
+      "id": "battery",
+      "kind": "battery",
+      "voltage": 12.0
+    },
+    "floor": {
+      "height": -0.95,
+      "id": "floor",
+      "kind": "floor",
+      "restitution": 1.0
+    },
+    "lamp": {
+      "cooling": 0.5,
+      "heat_capacity": 10.0,
+      "id": "lamp",
+      "kind": "lamp",
+      "light_fraction": 0.3,
+      "position": [
+        0.45,
+        0.25
+      ],
+      "resistance": 24.0,
+      "temperature": 293.15
+    },
+    "payload": {
+      "absorptivity": 0.8,
+      "charge": 0.02,
+      "cooling": 0.0,
+      "drag": 0.0,
+      "heat_capacity": 0.3,
+      "id": "payload",
+      "kind": "sphere",
+      "mass": 1.2,
+      "position": [
+        0.0,
+        0.25
+      ],
+      "radius": 0.06,
+      "restitution": 1.0,
+      "temperature": 293.15,
+      "velocity": [
+        0.0,
+        0.0
+      ]
+    },
+    "support": {
+      "id": "support",
+      "kind": "anchor",
+      "position": [
+        0.0,
+        1.1
+      ]
+    },
+    "suspension": {
+      "a": "support",
+      "b": "payload",
+      "damping": 1.0,
+      "id": "suspension",
+      "kind": "spring",
+      "rest_length": 0.65,
+      "stiffness": 24.0
+    },
+    "water": {
+      "bottom": -1.0,
+      "density": 1000.0,
+      "drag": 3.0,
+      "id": "water",
+      "kind": "fluid",
+      "surface": 0.5
+    }
+  },
+  "connections": [
+    [
+      "battery.positive",
+      "lamp.a"
+    ],
+    [
+      "lamp.b",
+      "battery.negative"
+    ]
+  ],
+  "interactions": [
+    {
+      "equation": "F = m*g",
+      "law": "gravity",
+      "objects": [
+        "payload"
+      ]
+    },
+    {
+      "equation": "F = q*E",
+      "law": "electric_force",
+      "objects": [
+        "payload"
+      ]
+    },
+    {
+      "equation": "F_buoyancy = -rho*V_submerged*g; F_drag = -c*(V_submerged/V_sphere)*v",
+      "law": "buoyancy_and_drag",
+      "objects": [
+        "payload",
+        "water"
+      ]
+    },
+    {
+      "equation": "Normal velocity reflects with coefficient of restitution",
+      "law": "floor_contact",
+      "objects": [
+        "payload",
+        "floor"
+      ]
+    },
+    {
+      "equation": "P_abs = absorptivity * P_light * r^2/(4*d^2); C*dT/dt = P_abs - h*(T-Tambient)",
+      "law": "radiative_absorption",
+      "objects": [
+        "lamp",
+        "payload"
+      ]
+    },
+    {
+      "equation": "F_tension = k*(length-rest_length) + damping*d(length)/dt",
+      "law": "hooke",
+      "objects": [
+        "support",
+        "suspension",
+        "payload"
+      ]
+    },
+    {
+      "equation": "Kirchhoff node balance + Ohm law I = Delta(V)/R",
+      "law": "ideal_dc_network",
+      "objects": [
+        "battery"
+      ]
+    },
+    {
+      "equation": "Kirchhoff node balance + Ohm law I = Delta(V)/R",
+      "law": "ideal_dc_network",
+      "objects": [
+        "lamp"
+      ]
+    },
+    {
+      "equation": "P = I^2*R; P_light = efficiency*P; C*dT/dt = (1-efficiency)*P - h*(T-Tambient)",
+      "law": "joule_heating_and_emission",
+      "objects": [
+        "lamp"
+      ]
+    }
+  ],
+  "world": {
+    "ambient_temperature": 293.15,
+    "electric_field": [
+      25.0,
+      0.0
+    ],
+    "gravity": [
+      0.0,
+      -9.81
+    ],
+    "relative_permittivity": 1.0
+  }
+}

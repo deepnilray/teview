@@ -1,0 +1,106 @@
+{
+  "components": {
+    "moving_payload": {
+      "absorptivity": 0.0,
+      "charge": 2e-06,
+      "cooling": 0.0,
+      "drag": 0.0,
+      "heat_capacity": null,
+      "id": "moving_payload",
+      "kind": "sphere",
+      "mass": 0.02,
+      "position": [
+        0.7,
+        0.0
+      ],
+      "radius": 0.03,
+      "restitution": 1.0,
+      "temperature": 293.15,
+      "velocity": [
+        0.0,
+        0.0
+      ]
+    },
+    "sensor_a": {
+      "id": "sensor_a",
+      "kind": "field_probe",
+      "position": [
+        1.5,
+        0.2
+      ]
+    },
+    "sensor_b": {
+      "id": "sensor_b",
+      "kind": "field_probe",
+      "position": [
+        2.0,
+        -0.2
+      ]
+    },
+    "stationary_ion": {
+      "charge": 3e-07,
+      "id": "stationary_ion",
+      "kind": "fixed_charge",
+      "position": [
+        0.0,
+        0.0
+      ],
+      "radius": 0.0
+    }
+  },
+  "connections": [],
+  "interactions": [
+    {
+      "equation": "E = k*q*(r-r_source)/(epsilon_r*|r-r_source|^3)",
+      "law": "fixed_charge_field",
+      "objects": [
+        "moving_payload",
+        "stationary_ion"
+      ]
+    },
+    {
+      "equation": "E = E_uniform + sum(k*q_i*(r-r_i)/(epsilon_r*|r-r_i|^3))",
+      "law": "electric_probe",
+      "objects": [
+        "sensor_a",
+        "stationary_ion"
+      ]
+    },
+    {
+      "equation": "E = E_uniform + sum(k*q_i*(r-r_i)/(epsilon_r*|r-r_i|^3))",
+      "law": "electric_probe",
+      "objects": [
+        "sensor_a",
+        "moving_payload"
+      ]
+    },
+    {
+      "equation": "E = E_uniform + sum(k*q_i*(r-r_i)/(epsilon_r*|r-r_i|^3))",
+      "law": "electric_probe",
+      "objects": [
+        "sensor_b",
+        "stationary_ion"
+      ]
+    },
+    {
+      "equation": "E = E_uniform + sum(k*q_i*(r-r_i)/(epsilon_r*|r-r_i|^3))",
+      "law": "electric_probe",
+      "objects": [
+        "sensor_b",
+        "moving_payload"
+      ]
+    }
+  ],
+  "world": {
+    "ambient_temperature": 293.15,
+    "electric_field": [
+      0.0,
+      0.0
+    ],
+    "gravity": [
+      0.0,
+      0.0
+    ],
+    "relative_permittivity": 1.0
+  }
+}

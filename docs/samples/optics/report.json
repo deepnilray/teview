@@ -1,0 +1,82 @@
+{
+  "duration_s": 4.0,
+  "final": {
+    "emitter.current": 0.5,
+    "emitter.heat_power": 3.0,
+    "emitter.light_power": 3.0,
+    "emitter.power": 6.0,
+    "emitter.temperature": 294.2376154815227,
+    "emitter.voltage": 12.0,
+    "receiver.absorbed_power": 0.07500000000000002,
+    "receiver.temperature": 294.65000000001,
+    "receiver.vx": 0.0,
+    "receiver.vy": 0.0,
+    "receiver.x": 0.3,
+    "receiver.y": 0.0,
+    "supply.voltage": 12.0,
+    "time": 4.0
+  },
+  "initial": {
+    "emitter.current": 0.5,
+    "emitter.heat_power": 3.0,
+    "emitter.light_power": 3.0,
+    "emitter.power": 6.0,
+    "emitter.temperature": 293.15,
+    "emitter.voltage": 12.0,
+    "receiver.absorbed_power": 0.07500000000000002,
+    "receiver.temperature": 293.15,
+    "receiver.vx": 0.0,
+    "receiver.vy": 0.0,
+    "receiver.x": 0.3,
+    "receiver.y": 0.0,
+    "supply.voltage": 12.0,
+    "time": 0.0
+  },
+  "interactions": [
+    {
+      "equation": "P_abs = absorptivity * P_light * r^2/(4*d^2); C*dT/dt = P_abs - h*(T-Tambient)",
+      "law": "radiative_absorption",
+      "objects": [
+        "emitter",
+        "receiver"
+      ]
+    },
+    {
+      "equation": "Kirchhoff node balance + Ohm law I = Delta(V)/R",
+      "law": "ideal_dc_network",
+      "objects": [
+        "supply"
+      ]
+    },
+    {
+      "equation": "Kirchhoff node balance + Ohm law I = Delta(V)/R",
+      "law": "ideal_dc_network",
+      "objects": [
+        "emitter"
+      ]
+    },
+    {
+      "equation": "P = I^2*R; P_light = efficiency*P; C*dT/dt = (1-efficiency)*P - h*(T-Tambient)",
+      "law": "joule_heating_and_emission",
+      "objects": [
+        "emitter"
+      ]
+    }
+  ],
+  "limitations": [
+    "No fluid flow, full Maxwell solver, induction, rigid rotation, or continuous collision detection",
+    "Ropes are compliant tension-only elements; lamp resistance and efficiency are constant",
+    "Electric fields exert forces on charges but do not automatically energize circuit terminals",
+    "Electrostatic Coulomb fields assume a homogeneous 3D dielectric sampled in a 2D plane; no induction",
+    "Charged objects use exterior spherical-shell fields; near-contact/interior interactions are not modeled",
+    "Optical absorption uses unshadowed point-source inverse-square flux; no spectral or wave optics",
+    "Fixed charge sources and field probes are idealized and impose no mechanical contact",
+    "SI values are used internally; numeric inputs are treated as SI"
+  ],
+  "model": "2D translation with RK4, discrete contact, ideal DC MNA, lumped electrothermal light fraction",
+  "samples": 401,
+  "source_sha256": "6bac40e3afe7710a6a3bb87dd5260e94e2a08077bb66b80be0d2b5f5ee5ed167",
+  "status": "simulated_not_validated",
+  "steps": 400,
+  "title": "Electrically powered source heats a separate receiving sphere"
+}

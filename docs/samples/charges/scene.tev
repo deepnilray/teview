@@ -1,0 +1,32 @@
+schema = 1
+title = "Independent point-charge source, moving charged sphere and two field probes"
+
+[world]
+gravity = [0, 0]
+relative_permittivity = 1
+duration = "1 s"
+dt = "0.001 s"
+
+[[components]]
+id = "stationary_ion"
+kind = "fixed_charge"
+position = [0, 0]
+charge = "0.0000003 C"
+
+[[components]]
+id = "moving_payload"
+kind = "sphere"
+position = ["0.7 m", 0]
+radius = "0.03 m"
+mass = "0.02 kg"
+charge = "0.000002 C"
+
+[[components]]
+id = "sensor_a"
+kind = "field_probe"
+position = ["1.5 m", "0.2 m"]
+
+[[components]]
+id = "sensor_b"
+kind = "field_probe"
+position = ["2.0 m", "-0.2 m"]

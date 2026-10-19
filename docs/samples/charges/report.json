@@ -1,0 +1,87 @@
+{
+  "duration_s": 1.0,
+  "final": {
+    "moving_payload.vx": 0.44807204691632424,
+    "moving_payload.vy": 0.0,
+    "moving_payload.x": 0.9467340465773366,
+    "moving_payload.y": 0.0,
+    "sensor_a.electric_field_x": 50009.46902059262,
+    "sensor_a.electric_field_y": 17811.63616410032,
+    "sensor_a.potential": 32335.778338934157,
+    "sensor_b.electric_field_x": 16028.640501776437,
+    "sensor_b.electric_field_y": -2983.9162136324276,
+    "sensor_b.potential": 18107.91200960302,
+    "time": 1.0
+  },
+  "initial": {
+    "moving_payload.vx": 0.0,
+    "moving_payload.vy": 0.0,
+    "moving_payload.x": 0.7,
+    "moving_payload.y": 0.0,
+    "sensor_a.electric_field_x": 26811.80361648121,
+    "sensor_a.electric_field_y": 6566.791548951076,
+    "sensor_a.potential": 23579.757333990547,
+    "sensor_b.electric_field_x": 10933.492829757792,
+    "sensor_b.electric_field_y": -1646.3176489939985,
+    "sensor_b.potential": 15007.660431077536,
+    "time": 0.0
+  },
+  "interactions": [
+    {
+      "equation": "E = k*q*(r-r_source)/(epsilon_r*|r-r_source|^3)",
+      "law": "fixed_charge_field",
+      "objects": [
+        "moving_payload",
+        "stationary_ion"
+      ]
+    },
+    {
+      "equation": "E = E_uniform + sum(k*q_i*(r-r_i)/(epsilon_r*|r-r_i|^3))",
+      "law": "electric_probe",
+      "objects": [
+        "sensor_a",
+        "stationary_ion"
+      ]
+    },
+    {
+      "equation": "E = E_uniform + sum(k*q_i*(r-r_i)/(epsilon_r*|r-r_i|^3))",
+      "law": "electric_probe",
+      "objects": [
+        "sensor_a",
+        "moving_payload"
+      ]
+    },
+    {
+      "equation": "E = E_uniform + sum(k*q_i*(r-r_i)/(epsilon_r*|r-r_i|^3))",
+      "law": "electric_probe",
+      "objects": [
+        "sensor_b",
+        "stationary_ion"
+      ]
+    },
+    {
+      "equation": "E = E_uniform + sum(k*q_i*(r-r_i)/(epsilon_r*|r-r_i|^3))",
+      "law": "electric_probe",
+      "objects": [
+        "sensor_b",
+        "moving_payload"
+      ]
+    }
+  ],
+  "limitations": [
+    "No fluid flow, full Maxwell solver, induction, rigid rotation, or continuous collision detection",
+    "Ropes are compliant tension-only elements; lamp resistance and efficiency are constant",
+    "Electric fields exert forces on charges but do not automatically energize circuit terminals",
+    "Electrostatic Coulomb fields assume a homogeneous 3D dielectric sampled in a 2D plane; no induction",
+    "Charged objects use exterior spherical-shell fields; near-contact/interior interactions are not modeled",
+    "Optical absorption uses unshadowed point-source inverse-square flux; no spectral or wave optics",
+    "Fixed charge sources and field probes are idealized and impose no mechanical contact",
+    "SI values are used internally; numeric inputs are treated as SI"
+  ],
+  "model": "2D translation with RK4, discrete contact, ideal DC MNA, lumped electrothermal light fraction",
+  "samples": 1001,
+  "source_sha256": "6608cbaf2f9fe984157d9533fce66d666c8bbaaba008fcf35a0f20738454df04",
+  "status": "simulated_not_validated",
+  "steps": 1000,
+  "title": "Independent point-charge source, moving charged sphere and two field probes"
+}

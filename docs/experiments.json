@@ -1,0 +1,173 @@
+[
+  {
+    "id": "ball",
+    "label": "Ball, spring and water",
+    "summary": "Mechanical forces, buoyancy, and electric charge",
+    "file": "samples/ball/viewer.html",
+    "source": "samples/ball/scene.tev",
+    "csv": "samples/ball/measurements.csv",
+    "duration": 2.0,
+    "components": 5,
+    "interactions": 5,
+    "samples": 1001,
+    "sha256": "bd0fa11c9e5d11fe15413a35f845a1d82c99f8eeff1601c72fd5f9f647391459",
+    "replay": "replayed",
+    "report": "simulated_not_validated",
+    "initial": {
+      "payload.x": 0.0,
+      "payload.y": 0.25
+    },
+    "final": {
+      "payload.x": 0.134586,
+      "payload.y": 0.339669
+    }
+  },
+  {
+    "id": "ball-heavy",
+    "label": "Heavier suspended ball",
+    "summary": "Twice the mass, same apparatus",
+    "file": "samples/ball-heavy/viewer.html",
+    "source": "samples/ball-heavy/scene.tev",
+    "csv": "samples/ball-heavy/measurements.csv",
+    "duration": 2.0,
+    "components": 5,
+    "interactions": 5,
+    "samples": 1001,
+    "sha256": "f0f1ed983b4abee801137a65b67b2a889b3ee016783637587068fa0d4bde2778",
+    "replay": "replayed",
+    "report": "simulated_not_validated",
+    "initial": {
+      "payload.x": 0.0,
+      "payload.y": 0.25
+    },
+    "final": {
+      "payload.x": 0.04835,
+      "payload.y": -0.087916
+    }
+  },
+  {
+    "id": "lamp",
+    "label": "Battery, switch and lamp",
+    "summary": "Electrical power, heat, and emission",
+    "file": "samples/lamp/viewer.html",
+    "source": "samples/lamp/scene.tev",
+    "csv": "samples/lamp/measurements.csv",
+    "duration": 5.0,
+    "components": 3,
+    "interactions": 4,
+    "samples": 501,
+    "sha256": "eda3d51cce80e4abdd3ccf610768f51d5a5e6065f481419ad01e1d0d442bcd9c",
+    "replay": "replayed",
+    "report": "simulated_not_validated",
+    "initial": {},
+    "final": {
+      "beacon.power": 6.0,
+      "beacon.light_power": 0.9,
+      "beacon.heat_power": 5.1,
+      "beacon.temperature": 295.97029
+    }
+  },
+  {
+    "id": "lamp-off",
+    "label": "Switch opened",
+    "summary": "The same circuit with the switch opened",
+    "file": "samples/lamp-off/viewer.html",
+    "source": "samples/lamp-off/scene.tev",
+    "csv": "samples/lamp-off/measurements.csv",
+    "duration": 5.0,
+    "components": 3,
+    "interactions": 4,
+    "samples": 501,
+    "sha256": "0f0f921e6a89a4a4a3ea20dc79bd5e104dc3012955ad0e489b422c4208eb591f",
+    "replay": "replayed",
+    "report": "simulated_not_validated",
+    "initial": {},
+    "final": {
+      "beacon.power": 0.0,
+      "beacon.light_power": 0.0,
+      "beacon.heat_power": 0.0,
+      "beacon.temperature": 293.15
+    }
+  },
+  {
+    "id": "charges",
+    "label": "Charged bodies and field probes",
+    "summary": "Multiple charged bodies and field sampling",
+    "file": "samples/charges/viewer.html",
+    "source": "samples/charges/scene.tev",
+    "csv": "samples/charges/measurements.csv",
+    "duration": 1.0,
+    "components": 4,
+    "interactions": 5,
+    "samples": 1001,
+    "sha256": "6608cbaf2f9fe984157d9533fce66d666c8bbaaba008fcf35a0f20738454df04",
+    "replay": "replayed",
+    "report": "simulated_not_validated",
+    "initial": {
+      "moving_payload.x": 0.7,
+      "moving_payload.y": 0.0
+    },
+    "final": {
+      "moving_payload.x": 0.946734,
+      "moving_payload.y": 0.0
+    }
+  },
+  {
+    "id": "optics",
+    "label": "Light absorption and heating",
+    "summary": "Coupled electrical, optical, and thermal models",
+    "file": "samples/optics/viewer.html",
+    "source": "samples/optics/scene.tev",
+    "csv": "samples/optics/measurements.csv",
+    "duration": 4.0,
+    "components": 3,
+    "interactions": 4,
+    "samples": 401,
+    "sha256": "6bac40e3afe7710a6a3bb87dd5260e94e2a08077bb66b80be0d2b5f5ee5ed167",
+    "replay": "replayed",
+    "report": "simulated_not_validated",
+    "initial": {
+      "receiver.x": 0.3,
+      "receiver.y": 0.0
+    },
+    "final": {
+      "receiver.x": 0.3,
+      "receiver.y": 0.0,
+      "emitter.power": 6.0,
+      "emitter.light_power": 3.0,
+      "emitter.heat_power": 3.0,
+      "emitter.temperature": 294.237615,
+      "receiver.temperature": 294.65,
+      "receiver.absorbed_power": 0.075
+    }
+  },
+  {
+    "id": "combined",
+    "label": "Coupled laboratory",
+    "summary": "Fluid, electric, spring, lamp, and heating in one apparatus",
+    "file": "samples/combined/viewer.html",
+    "source": "samples/combined/scene.tev",
+    "csv": "samples/combined/measurements.csv",
+    "duration": 2.0,
+    "components": 7,
+    "interactions": 9,
+    "samples": 1001,
+    "sha256": "814cfbdae4e0d190d5ea4ff9976078b4dd9c8169c20d8f18abfc63ae0f9593db",
+    "replay": "replayed",
+    "report": "simulated_not_validated",
+    "initial": {
+      "payload.x": 0.0,
+      "payload.y": 0.25
+    },
+    "final": {
+      "payload.x": 0.134586,
+      "payload.y": 0.339669,
+      "lamp.power": 6.0,
+      "lamp.light_power": 1.8,
+      "lamp.heat_power": 4.2,
+      "payload.temperature": 293.21157,
+      "lamp.temperature": 293.949366,
+      "payload.absorbed_power": 0.012053
+    }
+  }
+]

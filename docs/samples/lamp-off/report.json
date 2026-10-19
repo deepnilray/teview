@@ -1,0 +1,69 @@
+{
+  "duration_s": 5.0,
+  "final": {
+    "beacon.current": 0.0,
+    "beacon.heat_power": 0.0,
+    "beacon.light_power": 0.0,
+    "beacon.power": 0.0,
+    "beacon.temperature": 293.15,
+    "beacon.voltage": 0.0,
+    "cell.voltage": 12.0,
+    "time": 5.0
+  },
+  "initial": {
+    "beacon.current": 0.0,
+    "beacon.heat_power": 0.0,
+    "beacon.light_power": 0.0,
+    "beacon.power": 0.0,
+    "beacon.temperature": 293.15,
+    "beacon.voltage": 0.0,
+    "cell.voltage": 12.0,
+    "time": 0.0
+  },
+  "interactions": [
+    {
+      "equation": "Kirchhoff node balance + Ohm law I = Delta(V)/R",
+      "law": "ideal_dc_network",
+      "objects": [
+        "cell"
+      ]
+    },
+    {
+      "equation": "Kirchhoff node balance + Ohm law I = Delta(V)/R",
+      "law": "ideal_dc_network",
+      "objects": [
+        "gate"
+      ]
+    },
+    {
+      "equation": "Kirchhoff node balance + Ohm law I = Delta(V)/R",
+      "law": "ideal_dc_network",
+      "objects": [
+        "beacon"
+      ]
+    },
+    {
+      "equation": "P = I^2*R; P_light = efficiency*P; C*dT/dt = (1-efficiency)*P - h*(T-Tambient)",
+      "law": "joule_heating_and_emission",
+      "objects": [
+        "beacon"
+      ]
+    }
+  ],
+  "limitations": [
+    "No fluid flow, full Maxwell solver, induction, rigid rotation, or continuous collision detection",
+    "Ropes are compliant tension-only elements; lamp resistance and efficiency are constant",
+    "Electric fields exert forces on charges but do not automatically energize circuit terminals",
+    "Electrostatic Coulomb fields assume a homogeneous 3D dielectric sampled in a 2D plane; no induction",
+    "Charged objects use exterior spherical-shell fields; near-contact/interior interactions are not modeled",
+    "Optical absorption uses unshadowed point-source inverse-square flux; no spectral or wave optics",
+    "Fixed charge sources and field probes are idealized and impose no mechanical contact",
+    "SI values are used internally; numeric inputs are treated as SI"
+  ],
+  "model": "2D translation with RK4, discrete contact, ideal DC MNA, lumped electrothermal light fraction",
+  "samples": 501,
+  "source_sha256": "0f0f921e6a89a4a4a3ea20dc79bd5e104dc3012955ad0e489b422c4208eb591f",
+  "status": "simulated_not_validated",
+  "steps": 500,
+  "title": "Battery, switch, and lamp: DC power -> heat + light"
+}
