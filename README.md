@@ -104,6 +104,16 @@ A passing `tev verify` means declared computations replayed in the **current env
 
 Experiment platforms such as MLflow and DVC already offer sophisticated metrics, pipelines and experiment tracking; ReproZip offers more extensive dependency capture. TEVIEW is smaller. Its focus is a text-first **measurable acceptance gate backed by replayable evidence**, usable with ordinary local command-line programs and without mandatory infrastructure. It is not a replacement for those mature systems or for specialized physics, statistics, hardware, or workflow engines.
 
+## Numerical time-step reliability
+
+Run a scene at `dt`, `dt/2` and `dt/4` and compare the two finest final states before trusting a trajectory:
+
+```bash
+tev scene-converge examples/scenes/ball_water_spring.tev --rtol 1e-3 --atol 1e-6 --json-out convergence.json
+```
+
+The command reports tolerances, changes in SI units and failing observables. It returns 2 for excessive step-size sensitivity and 1 for invalid input. Relative tolerances scale with the change from each observable's initial state, not with coordinate origin or Kelvin offset. Agreement between these runs is a numerical sensitivity check, **not scientific validation**; impacts and other discontinuities need separate treatment. See [engineering strategy and release gates](docs/engineering-strategy.md).
+
 ## Development
 
 ```bash
@@ -112,4 +122,4 @@ python -m unittest discover -s tests -v
 
 CI exercises Windows, macOS and Linux with Python 3.11 and 3.13, including command capture, replay and the gate. See [architecture](docs/architecture.md), [security policy](SECURITY.md) and [contributing](CONTRIBUTING.md). Licensed under MIT.
 
-**Status: v0.4.0 alpha.** Backward compatibility is not yet guaranteed. External user adoption and independent scientific validation have not been established.
+**Status: v0.5.1 alpha.** Backward compatibility is not yet guaranteed. External user adoption and independent scientific validation have not been established.
