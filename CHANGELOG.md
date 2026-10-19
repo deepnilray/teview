@@ -1,3 +1,9 @@
+## 0.5.1a0 — Numerical accuracy diagnostics
+
+- Add `tev scene-converge` to diagnose final-observable time-step sensitivity with machine-readable comparisons and CI exit codes.
+- Add six physics diagnostic tests and engineering strategy with risk-based release gates.
+- Distinguish solver refinement stability from reproducible execution and experimentally validated physics.
+
 # Changelog
 
 ## v0.4.0a0 — Composable physical-scene kernel
